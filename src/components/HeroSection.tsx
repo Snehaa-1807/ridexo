@@ -3,17 +3,32 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Bike, Car, Truck, Bus } from "lucide-react";
+import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 
-const HeroSection = ({ onAuthRequired }: { onAuthRequired: () => void }) => {
+function HeroSection({ onAuthRequired }: { onAuthRequired: () => void }) {
+  const { userData } = useSelector((state: any) => state.user);
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (!userData) {
+      onAuthRequired();
+    } else {
+      router.push("/user/book");
+    }
+  };
+
   return (
     <div
       className="relative min-h-screen w-full overflow-hidden bg-cover bg-center"
       style={{ backgroundImage: "url('/heroImage.jpg')" }}
     >
+      {/* Overlay */}
       <div className="absolute inset-0 bg-black/80" />
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 text-center">
-        
+
+        {/* TITLE */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -23,15 +38,17 @@ const HeroSection = ({ onAuthRequired }: { onAuthRequired: () => void }) => {
           Book Any Vehicle
         </motion.div>
 
+        {/* SUBTEXT */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
           className="mt-4 max-w-xl text-gray-300"
         >
-          From daily rides to heavy transport - all in one platform.
+          From daily rides to heavy transport — all in one platform.
         </motion.p>
 
+        {/* ICONS */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -44,10 +61,12 @@ const HeroSection = ({ onAuthRequired }: { onAuthRequired: () => void }) => {
           <Bus size={30} />
         </motion.div>
 
+        {/* BUTTON */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="mt-12 px-10 py-4 bg-white text-black rounded-full font-semibold shadow-xl" onClick={onAuthRequired}
+          onClick={handleClick}
+          className="mt-12 px-10 py-4 bg-white text-black rounded-full font-semibold shadow-xl"
         >
           Book Now
         </motion.button>
@@ -55,6 +74,6 @@ const HeroSection = ({ onAuthRequired }: { onAuthRequired: () => void }) => {
       </div>
     </div>
   );
-};
+}
 
 export default HeroSection;

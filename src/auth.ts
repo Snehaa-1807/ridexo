@@ -4,16 +4,20 @@ import User from "@/app/models/user.model";
 import bcrypt from "bcryptjs";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-export const {handlers, signIn, signOut, auth} = NextAuth({
+
+// Work around types making NextAuth non-callable in some setup
+const NextAuthFn = NextAuth as unknown as ((config: any) => any);
+
+export const { handlers, signIn, signOut, auth } = NextAuthFn({
     providers: [
         Credentials({
             credentials: {
                 email: { type: "email", label: "Email", placeholder: "johndoe@gmail.com" },
-            },
-            password: {
-                type: "password",
-                label : "Password",
-                placeholder: "*****",
+                password: {
+                    type: "password",
+                    label : "Password",
+                    placeholder: "*****",
+                },
             },
             async authorize(credentials: any){
                 if(!credentials.email || !credentials.password){
@@ -42,19 +46,25 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
     ],
     callbacks:{
         async signIn({user, account}: any){
-            if(account.provider === "google"){
-                await connectDb();
-                let dbUser = await User.findOne({email: user.email})
-                if(!dbUser){
-                    dbUser = await User.create({
-                        name: user.name,
-                        email: user.email
-                    })
+            try {
+                if(account?.provider === "google"){
+                    await connectDb();
+                    let dbUser = await User.findOne({email: user.email})
+                    if(!dbUser){
+                        dbUser = await User.create({
+                            name: user.name,
+                            email: user.email,
+                            password: "oauth_user"
+                        })
+                    }
+                    user.id = dbUser._id.toString()
+                    user.role = dbUser.role
                 }
-                user.id = dbUser._id.toString()
-                user.role = dbUser.role
+                return true
+            } catch (error) {
+                console.error("SignIn error:", error)
+                return false
             }
-            return true
         },
      async jwt({token, user}: any){
         if(user){
