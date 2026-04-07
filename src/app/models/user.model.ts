@@ -10,6 +10,7 @@ interface IUser extends Document{
     otpExpiresAt?: Date;
     partnerOnBoardingSteps:number;
     mobileNumber?:string;
+    partnerStatus: "pending" | "approved" | "rejected";
     craetedAt: Date;
     updatedAt: Date;
 }
@@ -26,7 +27,8 @@ partnerOnBoardingSteps:{
     max:8,
 default:0
 },
-mobileNumber:{ype: String},
+mobileNumber:{type: String},
+partnerStatus:{type: String,enum: ["pending", "approved", "rejected"], default: "pending"},
 otp:{type: String},
 otpExpiresAt:{type: Date},
 }, {
