@@ -49,13 +49,7 @@ export async function POST(req: Request) {
 
     const vehicleNumber = number.toUpperCase();
 
-    const duplicate = await Vehicle.findOne({ number: vehicleNumber });
-    if (duplicate) {
-      return Response.json(
-        { message: "Vehicle already registered" },
-        { status: 400 }
-      );
-    }
+
 
     let vehicle = await Vehicle.findOne({ owner: user._id }); // ❌ fixed syntax
 
@@ -69,7 +63,13 @@ export async function POST(req: Request) {
 
       return Response.json(vehicle, { status: 200 });
     }
-
+   const duplicate = await Vehicle.findOne({ number: vehicleNumber });
+    if (duplicate) {
+      return Response.json(
+        { message: "Vehicle already registered" },
+        { status: 400 }
+      );
+    }
     // ❌ create new vehicle (missing before)
     vehicle = await Vehicle.create({
       owner: user._id,
