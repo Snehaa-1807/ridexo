@@ -1,15 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, UploadCloud, FileCheck, CircleDashed } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { useDispatch } from 'react-redux';
+import { setUserData } from '@/redux/userSlice';
+import { useSession } from "next-auth/react";
 
 type docsType = "aadhar" | "license" | "rc";
 
 function Page() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const { status } = useSession();
 
   const [docs, setDocs] = useState<Record<docsType, File | null>>({
     aadhar: null,
@@ -37,7 +42,11 @@ function Page() {
       formdata.append("license", docs.license);
       formdata.append("rc", docs.rc);
 
-      await axios.post("/api/partner/onboarding/documents", formdata);
+      await axios.post("/api/partner/onboarding/documents", formdata, { withCredentials: true });
+
+      // Refresh user data to update progress bar
+      const { data: userData } = await axios.get("/api/user/me", { withCredentials: true });
+      dispatch(setUserData(userData));
 
       setLoading(false);
       router.push("/partner/onboarding/bank");
@@ -58,6 +67,20 @@ function Page() {
   };
 
   const isCompleted = !!docs.aadhar && !!docs.license && !!docs.rc; // ✅ FIXED (boolean)
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen grid place-items-center text-gray-500">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">

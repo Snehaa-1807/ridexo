@@ -1,8 +1,7 @@
 'use client'
 
 import { CheckCircle2, Clock, Truck, Users, Video, XCircle } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import React, { useState } from 'react'
 import Kpi from './Kpi'
 import TabButton from './TabButton'
 import { AnimatePresence, motion } from 'framer-motion' // ✅ FIXED
@@ -18,28 +17,15 @@ type Stats = {
 
 type Tab = "kyc" | "partner" | "vehicle"
 
-const AdminDashboard = () => {
-  const [stats, setStats] = useState<Stats | null>(null)
+type AdminDashboardProps = {
+  stats: Stats
+  partnerReviews: any[]
+  partnerkyc: any[]
+  vehicleReviews: any[]
+}
+
+const AdminDashboard = ({ stats, partnerReviews, partnerkyc, vehicleReviews }: AdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('partner')
-  const [partnerReviews, setPartnerReviews] = useState<any[]>([]) // ✅ FIXED
-  const [partnerkyc, setPartnerkyc] = useState<any[]>([]) // ✅ FIXED
-  const [vehicleReviews, setVehicleReviews] = useState<any[]>([]) // ✅ FIXED
-
-  const handleGetData = async () => {
-    try {
-      const { data } = await axios.get("/api/admin/dashboard")
-      setStats(data?.Stats) // ✅ FIXED (safe access)
-      setPartnerReviews(data?.pendingPartnerReviews || []) // ✅ FIXED
-      setPartnerkyc(data?.pendingKyc || []) // ✅ FIXED
-      setVehicleReviews(data?.pendingVehicleReviews || []) // ✅ FIXED
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  useEffect(() => {
-    handleGetData()
-  }, [])
 
   return (
     <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200 '>

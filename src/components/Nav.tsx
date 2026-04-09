@@ -6,10 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import AuthModal from "./AuthModal";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@/redux/store";
-import { setUserData } from "@/redux/userSlice";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import {
   Bike,
   Car,
@@ -29,12 +26,10 @@ function Nav() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { userData } = useSelector((state: RootState) => state.user);
-  const dispatch = useDispatch<AppDispatch>();
+  const { data: session } = useSession();
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    dispatch(setUserData(null));
     setProfileOpen(false);
   };
 
@@ -72,7 +67,7 @@ function Nav() {
 
             {/* Desktop Auth */}
             <div className="hidden md:block">
-              {!userData ? (
+              {!session?.user ? (
                 <button
                   onClick={() => setAuthOpen(true)}
                   className="bg-white text-black px-4 py-1 rounded-full"
@@ -85,22 +80,22 @@ function Nav() {
                     onClick={() => setProfileOpen((p) => !p)}
                     className="w-10 h-10 bg-white text-black rounded-full"
                   >
-                    {userData.name.charAt(0).toUpperCase()}
+                    {session.user.name?.charAt(0).toUpperCase()}
                   </button>
 
                   <AnimatePresence>
                     {profileOpen && (
                       <motion.div className="absolute top-12 right-0 bg-white text-black p-4 rounded-xl w-64">
                         
-                        <p className="font-semibold">{userData.name}</p>
-                        <p className="text-xs mb-3">{userData.role}</p>
+                        <p className="font-semibold">{session.user.name}</p>
+                        <p className="text-xs mb-3">{(session.user as any)?.role}</p>
 
                         {/* ✅ Become Partner (Desktop) */}
-                        {userData.role !== "partner" && (
+                        {(session.user as any)?.role !== "partner" && (
                           <div
                             className="w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl cursor-pointer"
                             onClick={() =>
-                              router.push("/partner/onboarding/vehicle")
+                              router.push("/partner/status")
                             }
                           >
                             <div className="flex -space-x-2">
@@ -170,7 +165,7 @@ function Nav() {
                 );
               })}
 
-              {!userData ? (
+              {!session?.user ? (
                 <button
                   onClick={() => {
                     setAuthOpen(true);
@@ -183,11 +178,11 @@ function Nav() {
               ) : (
                 <>
                   {/* ✅ Become Partner (Mobile) */}
-                  {userData.role !== "partner" && (
+                  {(session.user as any)?.role !== "partner" && (
                     <div
                       className="flex items-center gap-2 mt-2 cursor-pointer"
                       onClick={() => {
-                        router.push("/partner/onboarding/vehicle");
+                        router.push("/partner/status");
                         setMobileOpen(false);
                       }}
                     >

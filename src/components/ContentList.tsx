@@ -1,12 +1,15 @@
+'use client'
+
 import { ArrowRight, CheckCircle2, User } from 'lucide-react';
-import { motion } from 'framer-motion'; // ✅ FIXED
+import { motion } from 'framer-motion';
 import React from 'react';
-import { useRouter } from 'next/navigation'; // ✅ FIXED (missing import
-async function ContentList({ data, type }: any) {
-const router=await useRouter();
+import { useRouter } from 'next/navigation';
+
+function ContentList({ data, type }: any) {
+  const router = useRouter();
   if (data?.length === 0) {
     return (
-      <motion.div // ✅ FIXED (missing tag)
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="bg-white rounded-2xl py-16 text-center border border-dashed border-gray-200 shadow-sm"
@@ -33,13 +36,19 @@ const router=await useRouter();
         <p className="text-xs text-gray-400">{data.length} items</p>
       </div>
 
-      {data.map((item: any, index: number) => { // ✅ FIXED (block syntax)
+      {data.map((item: any, index: number) => {
         const name = item.name;
         const email = item.email;
+        const itemId = item.id || item._id?.toString();
+        const href = type === "partner"
+          ? `/admin/reviews/partner/${itemId}`
+          : `/admin/reviews/vehicle/${itemId}`;
+
+        console.log("ContentList item:", { name, email, itemId, href, item });
 
         return (
           <motion.div
-            key={index} // ✅ FIXED (missing key)
+            key={itemId ?? index}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
@@ -48,7 +57,7 @@ const router=await useRouter();
           >
             <div className="flex items-center gap-3 min-w-0">
               <div className='w-10 h-10 rounded-xl flex items-center justify-center'>
-                {name?.charAt(0)?.toUpperCase() ?? <User size={14} />} {/* ✅ FIXED safe access */}
+                {name?.charAt(0)?.toUpperCase() ?? <User size={14} />}
               </div>
 
               <div className="min-w-0">
@@ -58,15 +67,26 @@ const router=await useRouter();
             </div>
 
             <div className="shrink-0">
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white text-sm font-semibold transition-colors"
-              onClick={()=>{
-                type=="partner"?router.push(`/admin/reviews/partner/${item._id}`):router.push(`/admin/reviews/vehicle/${item._id}`)
-              }}
+              <button
+                type="button"
+                disabled={!itemId}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log("Button clicked with itemId:", itemId, "href:", href);
+                  if (itemId) {
+                    try {
+                      await router.push(href);
+                      console.log("Navigation successful to:", href);
+                    } catch (err) {
+                      console.error("Navigation error:", err);
+                    }
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-gray-300 text-white text-sm font-semibold transition-colors"
               >
                 Review <ArrowRight size={15} />
-              </motion.button>
+              </button>
             </div>
           </motion.div>
         );

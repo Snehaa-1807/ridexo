@@ -34,10 +34,9 @@ export async function POST(req: NextRequest) {
 
     user.mobileNumber = mobileNumber;
 
-    if (user.partnerOnBoardingSteps < 3) {
       user.partnerOnBoardingSteps = 3;
-    }
-
+    
+user.partnerStatus = "pending";
     await user.save();
 
     return Response.json(partnerBank, { status: 201 });
@@ -71,8 +70,11 @@ export async function GET(req: NextRequest) {
         { status: 200 }
       );
     } else {
-      return Response.json({ message: "no data found" }, { status: 404 });
-    }
+  return Response.json(
+    { partnerBank: null, mobileNumber: user.mobileNumber || "" },
+    { status: 200 }
+  );
+}
 
   } catch (error) {
     return Response.json({ message: `get partner bank error ${error}` }, { status: 500 });

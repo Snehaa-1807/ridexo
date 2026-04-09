@@ -4,18 +4,24 @@ import User from "@/app/models/user.model";
 import Vehicle from "@/app/models/vehicle.model";
 import { NextRequest } from "next/server";
 
-const VEHICLE_REGEX = /^[A-Z]{2}[0-9]{0,2}[0-9]{4}$/;
+const VEHICLE_REGEX = /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$|^[A-Z]{2}\d{6,7}$/;
 
 export async function POST(req: Request) {
   try {
     await connectDb(); // ✅ missing
 
+    const cookieHeader = req.headers.get("cookie");
+    console.log("vehicle POST cookie header:", cookieHeader);
+
     const session = await auth();
 
+    console.log("vehicle POST session:", session);
+
     if (!session || !session.user?.email) { // ❌ fixed session.l
+      console.log("vehicle POST unauthorized - no session or email");
       return Response.json(
         { message: "unauthorized" },
-        { status: 400 }
+        { status: 401 }
       );
     }
 
@@ -51,22 +57,34 @@ export async function POST(req: Request) {
 
 
 
-    let vehicle = await Vehicle.findOne({ owner: user._id }); // ❌ fixed syntax
+    let vehicle = await Vehicle.findOne({ owner: user._id }); // Check if user already has a vehicle
 
     if (vehicle) {
+      // User already has a vehicle, update it
       vehicle.type = type;
       vehicle.number = vehicleNumber;
       vehicle.vehicleModel = vehicleModel;
       vehicle.status = "pending";
 
       await vehicle.save();
-
+      if(user.partnerOnBoardingSteps < 2){
+        user.partnerOnBoardingSteps = 2;
+        user.partnerStatus = "pending";
+        await user.save();
+      }
+      else{
+        user.partnerOnBoardingSteps = 3;
+        user.partnerStatus = "pending";
+        await user.save();
+      }
       return Response.json(vehicle, { status: 200 });
     }
-   const duplicate = await Vehicle.findOne({ number: vehicleNumber });
+
+    // User doesn't have a vehicle yet, check if this number is already taken by someone else
+    const duplicate = await Vehicle.findOne({ number: vehicleNumber });
     if (duplicate) {
       return Response.json(
-        { message: "Vehicle already registered" },
+        { message: "Vehicle number already registered by another user" },
         { status: 400 }
       );
     }
@@ -85,6 +103,7 @@ export async function POST(req: Request) {
     }
 
     user.role = "partner";
+    user.partnerStatus = "pending";
     await user.save();
 
     return Response.json(vehicle, { status: 201 });
@@ -101,12 +120,16 @@ export async function GET(req: NextRequest) {
   try {
     await connectDb();
 
+    const cookieHeader = req.headers.get("cookie");
+    console.log("vehicle GET cookie header:", cookieHeader);
+
     const session = await auth();
 
     if (!session || !session.user?.email) {
+      console.log("vehicle GET unauthorized session:", session);
       return Response.json(
         { message: "unauthorized" },
-        { status: 400 }
+        { status: 401 }
       );
     }
 
@@ -121,7 +144,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return Response.json(user, { status: 200 });
+    const vehicle = await Vehicle.findOne({ owner: user._id });
+
+    return Response.json(vehicle || {}, { status: 200 });
 
   } catch (error) {
     return Response.json(

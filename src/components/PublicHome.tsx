@@ -13,10 +13,8 @@ const PublicHome = () => {
 
   return (
     <>
-      <Nav />
       <HeroSection onAuthRequired={() => setAuthOpen(true)} />
       <VehicleSlider />
-<Footer/>
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}

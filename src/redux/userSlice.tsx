@@ -3,9 +3,13 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 
 // Define a user type for the slice state
 interface IUser {
+  id: string
   name: string
   email: string
   role?: string
+  partnerOnBoardingSteps?: number
+  partnerStatus?: string
+  rejectionReason?: string
 }
 
 // Define a type for the slice state

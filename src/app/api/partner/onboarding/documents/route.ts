@@ -84,16 +84,25 @@ export async function POST(req: NextRequest) {
 
     if (user.partnerOnBoardingSteps < 2) {
       user.partnerOnBoardingSteps = 2;
+    }else{
+      user.partnerOnBoardingSteps = 3;
     }
-
+user.partnerStatus = "pending";
     await user.save(); // ❌ you were storing in wrong variable
 
     return Response.json(partnerDocs, { status: 201 }); // ✅ correct response
 
-  } catch (error) {
-    return Response.json(
-      { message: `partner Docs error ${error}` },
-      { status: 500 } // ❌ fixed status
-    );
-  }
+  } catch (error: any) {
+  console.log("DOC UPLOAD ERROR:", error); // ✅ debug
+
+  return Response.json(
+    {
+      message:
+        error?.message ||
+        error?.response?.data?.message ||
+        "partner docs error",
+    },
+    { status: 500 }
+  );
+}
 }

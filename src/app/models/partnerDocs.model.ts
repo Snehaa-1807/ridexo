@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-interface IPartnerDocs {
+export interface IPartnerDocs {
   owner: mongoose.Types.ObjectId;
   aadharUrl: string;
   rcUrl: string;

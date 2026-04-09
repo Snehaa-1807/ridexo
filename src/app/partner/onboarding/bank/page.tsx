@@ -14,11 +14,15 @@ import {
 import { useRouter } from "next/navigation";
 import axios from "axios"; // ✅ FIXED (missing import)
 import { sanitizeFilter } from "mongoose";
-
+import { useDispatch } from 'react-redux';
+import { setUserData } from '@/redux/userSlice';
+import { useSession } from "next-auth/react";
 const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
 function Page() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const { status } = useSession();
 
   const [accountHolder, setAccountHolder] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -41,10 +45,16 @@ function Page() {
         ifsc: sanitizedIfsc,
         upi,
         mobileNumber,
-      });
+      }, { withCredentials: true });
 
       console.log(data);
+      
+      // Refresh user data to update progress bar
+      const { data: userData } = await axios.get("/api/user/me", { withCredentials: true });
+      dispatch(setUserData(userData));
+      
       setLoading(false);
+      router.push("/partner/status"); // ✅ Redirect to status page
     } catch (error: any) {
       setError(error?.response?.data?.message || "something went wrong");
       console.log(error);
@@ -53,10 +63,15 @@ function Page() {
   };
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
+      return;
+    }
+
     const handleGetBank = async () => {
       setError("");
       try {
-        const { data } = await axios.get("/api/partner/onboarding/bank");
+        const { data } = await axios.get("/api/partner/onboarding/bank", { withCredentials: true });
 
         if (data?.partnerBank) { // ✅ added safety check
           setAccountHolder(data.partnerBank.accountHolder || "");
@@ -71,8 +86,18 @@ function Page() {
       }
     };
 
-    handleGetBank();
-  }, []);
+    if (status === "authenticated") {
+      handleGetBank();
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen grid place-items-center text-gray-500">
+        Loading...
+      </div>
+    );
+  }
 
   const isNameValid = accountHolder.trim().length >= 3;
   const isAccountValid = accountNumber.trim().length >= 9;

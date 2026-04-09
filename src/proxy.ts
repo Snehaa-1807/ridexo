@@ -35,7 +35,7 @@ export async function proxy(req: NextRequest) {
   const role = session.user?.role;
 
   // ✅ Partner onboarding allowed for everyone logged in
-  if (pathname.startsWith("/partner/onboarding")) {
+  if (pathname.startsWith("/partner/onboarding") || pathname.startsWith("/partner/status")) {
     return NextResponse.next();
   }
 
@@ -50,7 +50,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // API protection
-  if (pathname.startsWith("/api") && !session ||  !session.user) {
+  if (pathname.startsWith("/api") && (!session || !session.user)) {
     return NextResponse.json(
       { message: "unauthorized" },
       { status: 401 }

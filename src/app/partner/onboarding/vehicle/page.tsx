@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useDispatch } from 'react-redux';
+import { setUserData } from '@/redux/userSlice';
+import { useSession } from "next-auth/react";
 
 const VEHICLES = [
   { id: "bike", label: "Bike", icon: Bike, desc: "2 wheeler" },
@@ -16,6 +19,8 @@ const VEHICLES = [
 
 function Page() {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const { status, data: session } = useSession();
 
   const [vehicleType, setVehicleType] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
@@ -25,21 +30,45 @@ function Page() {
 
   const handleVehicle = async () => {
     setError("");
+    console.log("handleVehicle called, session status:", status, "session:", session);
+    console.log("Session user:", session?.user);
+    console.log("Making POST request to /api/partner/onboarding/vehicle");
     try {
       setLoading(true);
-      await axios.post("/api/partner/onboarding/vehicle", {
+      const response = await axios.post("/api/partner/onboarding/vehicle", {
         type: vehicleType,
         number: vehicleNumber,
         vehicleModel,
       });
+      console.log("POST response:", response);
+      
+      console.log("POST request successful, fetching user data");
+      // Refresh user data to update progress bar
+      const { data: userData } = await axios.get("/api/user/me");
+      console.log("User data fetched:", userData);
+      dispatch(setUserData(userData));
+      
       setLoading(false);
+      router.push("/partner/onboarding/documents");
+
     } catch (error: any) {
+      console.error("handleVehicle error:", error);
+      console.error("Error response:", error.response);
+      console.error("Error status:", error.response?.status);
+      console.error("Error data:", error.response?.data);
       setError(error?.response?.data?.message ?? "something went wrong");
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log("Vehicle page useEffect - status:", status, "session:", session);
+    if (status === "unauthenticated") {
+      console.log("User is unauthenticated, redirecting to /");
+      router.push("/");
+      return;
+    }
+
     const handleGetVehicle = async () => {
       try {
         setLoading(true);
@@ -51,13 +80,17 @@ function Page() {
 
         setLoading(false); // ✅ FIXED (missing)
       } catch (error: any) {
+        console.error("handleGetVehicle error:", error);
         setError(error?.response?.data?.message ?? "something went wrong");
         setLoading(false); // ✅ FIXED
       }
     };
 
-    handleGetVehicle();
-  }, []);
+    if (status === "authenticated") {
+      console.log("User is authenticated, fetching vehicle data");
+      handleGetVehicle();
+    }
+  }, [status, router]);
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">

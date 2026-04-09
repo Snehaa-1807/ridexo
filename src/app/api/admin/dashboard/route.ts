@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const pendingPartnerUsers = await User.find({
       role: "partner",
       partnerStatus: "pending",
-      partnerOnBoardingSteps: 3
+      partnerOnBoardingSteps: {$gte : 3}
     });
 
     const partnerIds = pendingPartnerUsers.map((p) => p._id);
@@ -34,20 +34,20 @@ export async function GET(req: NextRequest) {
     );
 
     const pendingPartnerReviews = pendingPartnerUsers.map((p) => ({
-      _id: p._id,
+      id: p._id.toString(),
       name: p.name,
       email: p.email,
       vehicleType: vehicleTypeMap.get(String(p._id))
     }));
 
     return NextResponse.json({
-      Stats: { // ✅ FIXED (invalid syntax removed)
+      stats: {
         totalApprovedPartners: totalApproved,
         totalPendingPartners: totalPending,
         totalRejectedPartners: totalRejected,
         totalPartners: totalPartners,
       },
-      pendingPartnerReviews,
+      partnerReviews: pendingPartnerReviews,
     }, {
       status: 200
     });

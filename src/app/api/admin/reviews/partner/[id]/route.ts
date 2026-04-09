@@ -33,8 +33,9 @@ const document=await PartnerDocs.findOne({ owner: partnerId });
 const bank=await PartnerBank.findOne({ owner: partnerId });
 
 return Response.json({
+  partner,
   vehicle: vehicle || null,
-  document: document || null,
+  documents: document || null, // ✅ FIXED KEY
   bank: bank || null
 },{ status: 200 });
 } catch (error) {

@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
 import connectDb from "@/app/lib/db";
 import User from "@/app/models/user.model";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDb();
 
@@ -33,6 +33,9 @@ export async function GET() {
         name: user.name,
         email: user.email,
         role: user.role,
+        partnerOnBoardingSteps: user.partnerOnBoardingSteps,
+        partnerStatus: user.partnerStatus,
+        rejectionReason: user.rejectionReason,
       },
       { status: 200 }
     );

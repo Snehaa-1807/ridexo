@@ -21,7 +21,7 @@ function Page() {
 
       // ✅ ALWAYS provide valid userID
       const userId =
-        userData?._id?.toString() || "user_" + Math.random().toString(36);
+        userData?.id?.toString() || "user_" + Math.random().toString(36);
 
       const userName =
         userData?.name || "Guest User";

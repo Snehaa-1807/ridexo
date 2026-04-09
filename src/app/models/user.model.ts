@@ -1,6 +1,6 @@
 import mongoose, {Document} from "mongoose";
 import { number } from "motion";
-interface IUser extends Document{
+export interface IUser extends Document{
     name: string;
     email: string;
     password?: string;
@@ -11,6 +11,7 @@ interface IUser extends Document{
     partnerOnBoardingSteps:number;
     mobileNumber?:string;
     partnerStatus: "pending" | "approved" | "rejected";
+    rejectionReason?: string;
     craetedAt: Date;
     updatedAt: Date;
 }
@@ -29,6 +30,7 @@ default:0
 },
 mobileNumber:{type: String},
 partnerStatus:{type: String,enum: ["pending", "approved", "rejected"], default: "pending"},
+rejectionReason:{type: String},
 otp:{type: String},
 otpExpiresAt:{type: Date},
 }, {

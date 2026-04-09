@@ -8,12 +8,14 @@ import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 type propType = {
   open: boolean;
   onClose: () => void;
 };
 type stepType = "login" | "signup" | "otp";
 function AuthModal({ open, onClose }: propType) {
+    const router = useRouter();
     const [step, setStep] = useState<stepType>("login");
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
@@ -51,21 +53,47 @@ const handleVerifyEmail = async () => {
     }
 }
 const handleLogin = async () => {
-    setLoading(true);
-    const res = await signIn("credentials", {
-        email, password, redirect: false
-    })
-        setLoading(false);
+  setLoading(true);
+  setErr(""); // clear previous error
 
-    console.log(res)
-}
+  const res = await signIn("credentials", {
+    email,
+    password,
+    redirect: false,
+    callbackUrl: "/",
+  });
+
+  console.log("signIn result:", res);
+  setLoading(false);
+
+  if (res?.error) {
+    setErr("Invalid email or password");
+    return;
+  }
+
+  onClose();
+  router.refresh();
+};
 const handleGoogleLogin = async () => {
-try {
-await signIn("google", { redirect: true, callbackUrl: "/" })
-} catch(error) {
-console.error("Google login error:", error)
-setErr("Failed to login with Google")
-}
+  try {
+    setLoading(true);
+    setErr("");
+    console.log("Starting Google login...");
+    console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+
+    // Use redirect: true for OAuth providers
+    const result = await signIn("google", {
+      redirect: true,
+      callbackUrl: "/"
+    });
+
+    console.log("Google signIn result:", result);
+
+  } catch (error) {
+    console.error("Google login error:", error);
+    setErr("Failed to login with Google");
+    setLoading(false);
+  }
 }
 const handleChangeOtp = (index: number, value: string)=>{
     if (!/^[0-9]?$/.test(value)) return
@@ -125,10 +153,18 @@ const handleChangeOtp = (index: number, value: string)=>{
           <div className="text-center">
             <p>Login / Register Form Here</p>
           </div>
-          <button className='w-full h-11 rounded-xl border border-black/20 flex items-center justify-center gap-3 text-sm font-semibold text-black hover:bg-black hover:text-white transition' onClick={handleGoogleLogin}>
-<Image src="/google.png" alt="Google" width={20} height={20}/>
-Continue with Google
-</button>
+          <button
+            className='w-full h-11 rounded-xl border border-black/20 flex items-center justify-center gap-3 text-sm font-semibold text-black hover:bg-black hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed'
+            onClick={handleGoogleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <CircleDashed className="w-5 h-5 animate-spin" />
+            ) : (
+              <Image src="/google.png" alt="Google" width={20} height={20}/>
+            )}
+            {loading ? "Connecting..." : "Continue with Google"}
+          </button>
 <div className='flex items-center gap-4 my-6'>
 <div className='flex-1 h-px bg-black/10'/>
 <div className='text-xs text-gray-500'>OR</div>
@@ -153,6 +189,7 @@ text-sm' onChange={(e)=>setEmail(e.target.value)} value={email} />
 className='w-full bg-transparent outline-none
 text-sm' onChange={(e)=>setPassword(e.target.value)} value={password} />
 </div>
+{err && <p className="text-red-500 text-sm">*{err}</p>}
 <button className='w-full h-11 rounded-xl flex justify-center items-center bg-black text-white font-semibold hover:bg-gray-800 transition' onClick={handleLogin}>{!loading ?  "Login":<CircleDashed size={18} color="white" className="animate-spin"/>}</button>
 </div>
 <div className="mt-6 text-center text-sm text-gray-500">Don't have an account? <button onClick={()=> setStep ("signup")} className="text-black font-medium hover:underline bg-none border-none cursor-pointer">Sign Up</button></div>

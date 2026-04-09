@@ -4,8 +4,10 @@ import { RootState } from '@/redux/store'
 import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { motion } from "framer-motion"
-import { Check, Lock } from 'lucide-react'
+import { Check, Clock, Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import RejectionCard from './RejectionCard'
+import StatusCard from './StatusCard'
 
 type Step = {
   id: number,
@@ -33,19 +35,19 @@ const PartnerDashboard = () => {
 
   useEffect(() => {
     if (userData) {
-      setActiveStep((userData.partnerOnboardingStep ?? 0) + 1) // ✅ FIXED (safe access)
-    }
+setActiveStep(userData.partnerOnBoardingSteps ?? 0)    }
   }, [userData]);
 
-  const goToStep = (step: Step) => {
-    if (step.route && step.id <= activeStep) {
-      router.push(step.route)
-    }
+ const goToStep = (step: Step) => {
+  // allow navigation to completed + current active step
+  if (step.route && step.id <= activeStep + 1) {
+    router.push(step.route)
   }
+}
 
   const progressPercentage =
     TOTAL_STEPS > 1
-      ? ((activeStep - 1) / (TOTAL_STEPS - 1)) * 100
+      ? ((activeStep) / (TOTAL_STEPS - 1)) * 100
       : 0; // ✅ FIXED (prevent divide by 0)
 
   return (
@@ -69,9 +71,9 @@ const PartnerDashboard = () => {
 
             <div className='relative flex justify-between'>
               {steps.map((s) => {
-                const completed = s.id < activeStep
-                const active = s.id === activeStep
-                const locked = s.id > activeStep
+                 const completed = s.id <= activeStep
+  const active = s.id === activeStep + 1
+  const locked = s.id > activeStep + 1
 
                 return (
                   <motion.div
@@ -109,6 +111,28 @@ const PartnerDashboard = () => {
           </div>
         </div>
 
+{
+          activeStep ==4 && userData?.partnerStatus === "rejected" &&(
+            <RejectionCard
+  title="Partner Rejected"
+  reason={userData.rejectionReason}
+  actionLabel={" Review and Update "}
+  onAction={() => {
+    router.push("/partner/onboarding/vehicle")
+  }}
+/>
+          )
+}  
+
+{
+            activeStep ==4 && userData?.partnerStatus === "pending" &&(
+              <StatusCard
+              icon={<Clock size={18} />}
+              title={"Under Review"}
+              desc={"Admin is verifying your documents. Please wait for approval."}
+              />
+
+)}
       </div>
     </div>
   )
