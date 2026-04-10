@@ -1,12 +1,13 @@
 'use client'
 
 import { CheckCircle2, Clock, Truck, Users, Video, XCircle } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Kpi from './Kpi'
 import TabButton from './TabButton'
-import { AnimatePresence, motion } from 'framer-motion' // ✅ FIXED
+import { AnimatePresence, motion } from 'framer-motion'
 import ContentList from './ContentList'
-import Image from 'next/image' // ✅ FIXED (missing import)
+import Image from 'next/image'
+import axios from 'axios'
 
 type Stats = {
   totalApprovedPartners: number;
@@ -24,33 +25,56 @@ type AdminDashboardProps = {
   vehicleReviews: any[]
 }
 
-const AdminDashboard = ({ stats, partnerReviews, partnerkyc, vehicleReviews }: AdminDashboardProps) => {
+const AdminDashboard = ({
+  stats,
+  partnerReviews,
+  partnerkyc,
+  vehicleReviews
+}: AdminDashboardProps) => {
+
   const [activeTab, setActiveTab] = useState<Tab>('partner')
+  const [pendingKyc, setPendingKyc] = useState<any[]>([])
+
+  const handleGetPendingKyc = async () => {
+    try {
+      const { data } = await axios.get("/api/admin/video-kyc/pending")
+      setPendingKyc(data)
+    } catch (error) {
+      console.log("Error fetching pending KYC:", error)
+    }
+  }
+
+  useEffect(() => {
+    handleGetPendingKyc()
+  }, [])
 
   return (
-    <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200 '>
+    <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200'>
+      {/* Header */}
       <div className='sticky top-0 bg-white/80 backdrop-blur-lg border-b z-40'>
-        <div className='max-w-7xl mx-auto h-16 px-6 flex items-center justify-between'> {/* ✅ FIXED (tems → items) */}
+        <div className='max-w-7xl mx-auto h-16 px-6 flex items-center justify-between'>
           <div className='flex items-center gap-3'>
             <Image src="/logo.png" alt="logo" width={44} height={44} />
           </div>
 
           <div className='flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-black text-white'>
-            <Users size={14} /> {/* ✅ FIXED (wrong User import removed) */}
+            <Users size={14} />
             Admin Dashboard
           </div>
         </div>
       </div>
 
       <main className='max-w-7xl mx-auto py-12 px-6 space-y-16'>
+        {/* KPI Section */}
         <div className='grid grid-cols-2 sm:grid-cols-4 gap-6'>
-          <Kpi label="Total Partners" value={stats?.totalPartners} icon={<Users />} variant={"totalPartners"} />
-          <Kpi label="Total Approved Partners" value={stats?.totalApprovedPartners} icon={<CheckCircle2 />} variant={"approved"} />
-          <Kpi label="Total Pending Partners" value={stats?.totalPendingPartners} icon={<Clock />} variant={"pending"} />
-          <Kpi label="Total Rejected Partners" value={stats?.totalRejectedPartners} icon={<XCircle />} variant={"rejected"} />
+          <Kpi label="Total Partners" value={stats?.totalPartners} icon={<Users />} variant="totalPartners" />
+          <Kpi label="Total Approved Partners" value={stats?.totalApprovedPartners} icon={<CheckCircle2 />} variant="approved" />
+          <Kpi label="Total Pending Partners" value={stats?.totalPendingPartners} icon={<Clock />} variant="pending" />
+          <Kpi label="Total Rejected Partners" value={stats?.totalRejectedPartners} icon={<XCircle />} variant="rejected" />
         </div>
 
-        <div className='bg-white rounded-2xl p-2 shadow-lg border border-gray-100 flex flex-wrap gap-2'> {/* ✅ FIXED (shado-lg) */}
+        {/* Tabs */}
+        <div className='bg-white rounded-2xl p-2 shadow-lg border border-gray-100 flex flex-wrap gap-2'>
           <TabButton
             active={activeTab === "partner"}
             count={partnerReviews?.length ?? 0}
@@ -62,7 +86,7 @@ const AdminDashboard = ({ stats, partnerReviews, partnerkyc, vehicleReviews }: A
 
           <TabButton
             active={activeTab === "kyc"}
-            count={partnerkyc?.length ?? 0}
+            count={pendingKyc?.length ?? partnerkyc?.length ?? 0}
             icon={<Video size={15} />}
             onClick={() => setActiveTab("kyc")}
           >
@@ -79,6 +103,7 @@ const AdminDashboard = ({ stats, partnerReviews, partnerkyc, vehicleReviews }: A
           </TabButton>
         </div>
 
+        {/* Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -88,9 +113,20 @@ const AdminDashboard = ({ stats, partnerReviews, partnerkyc, vehicleReviews }: A
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="space-y-3"
           >
-            {activeTab === "partner" && <ContentList data={partnerReviews} type={"partner"} />}
-            {activeTab === "kyc" && <ContentList data={partnerkyc} type={"kyc"} />} {/* ✅ FIXED (pendingkyc → partnerkyc) */}
-            {activeTab === "vehicle" && <ContentList data={vehicleReviews} type={"vehicle"} />}
+            {activeTab === "partner" && (
+              <ContentList data={partnerReviews} type="partner" />
+            )}
+
+            {activeTab === "kyc" && (
+              <ContentList
+                data={pendingKyc.length ? pendingKyc : partnerkyc}
+                type="kyc"
+              />
+            )}
+
+            {activeTab === "vehicle" && (
+              <ContentList data={vehicleReviews} type="vehicle" />
+            )}
           </motion.div>
         </AnimatePresence>
       </main>

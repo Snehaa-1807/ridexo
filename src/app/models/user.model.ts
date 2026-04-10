@@ -1,5 +1,6 @@
 import mongoose, {Document} from "mongoose";
 import { number } from "motion";
+type VideoKycStatus = "pending" | "approved" | "rejected" | "not_required" | "in_progress";
 export interface IUser extends Document{
     name: string;
     email: string;
@@ -12,6 +13,9 @@ export interface IUser extends Document{
     mobileNumber?:string;
     partnerStatus: "pending" | "approved" | "rejected";
     rejectionReason?: string;
+    videoKycStatus: VideoKycStatus ;
+    videoKycRoomId: string;
+    videoKycRejectionReason: string;
     craetedAt: Date;
     updatedAt: Date;
 }
@@ -31,6 +35,9 @@ default:0
 mobileNumber:{type: String},
 partnerStatus:{type: String,enum: ["pending", "approved", "rejected"], default: "pending"},
 rejectionReason:{type: String},
+videoKycStatus:{type: String, enum: ["pending", "approved", "rejected", "not_required", "in_progress"], default: "not_required"},
+videoKycRoomId:{type: String},
+videoKycRejectionReason:{type: String},
 otp:{type: String},
 otpExpiresAt:{type: Date},
 }, {

@@ -38,6 +38,8 @@ function Page() {
   const [rejectReason, setRejectReason] = useState('')
 const [approvedLoading, setApprovedLoading] = useState(false)
 const [rejectLoading, setRejectLoading] = useState(false)
+
+
   const handleGetPartner = async () => {
     try {
       const res = await axios.get(`/api/admin/reviews/partner/${id}`, { withCredentials: true })

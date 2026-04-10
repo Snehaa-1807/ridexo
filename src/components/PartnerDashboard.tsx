@@ -4,10 +4,11 @@ import { RootState } from '@/redux/store'
 import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { motion } from "framer-motion"
-import { Check, Clock, Lock } from 'lucide-react'
+import { Check, Clock, Lock, Video } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import RejectionCard from './RejectionCard'
 import StatusCard from './StatusCard'
+import ActionCard from './ActionCard'
 
 type Step = {
   id: number,
@@ -49,7 +50,10 @@ setActiveStep(userData.partnerOnBoardingSteps ?? 0)    }
     TOTAL_STEPS > 1
       ? ((activeStep) / (TOTAL_STEPS - 1)) * 100
       : 0; // ✅ FIXED (prevent divide by 0)
-
+console.log("Active Step:", activeStep);
+console.log("Video KYC Status:", userData?.videoKycStatus);
+console.log("Video KYC Room ID:", userData?.videoKycRoomId);
+console.log("User Data:", userData);
   return (
     <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200 px-4 pt-28 pb-20'>
       <div className="max-w-7xl mx-auto space-y-16">
@@ -133,6 +137,42 @@ setActiveStep(userData.partnerOnBoardingSteps ?? 0)    }
               />
 
 )}
+{activeStep ==5 && (
+  
+    userData?.videoKycStatus === "approved" ? (
+      <StatusCard
+        icon={<Check size={18} />}
+        title={"Video KYC Approved"}
+        desc={"You can now proceed to pricing."}
+      />
+    ) : userData?.videoKycStatus === "rejected" ? (
+      <RejectionCard
+        title="Video KYC Rejected"
+        reason={userData?.videoKycRejectionReason}
+        actionLabel="Request Again"
+        onAction={() => router.push("/partner/onboarding/review")}
+      />
+    ) : userData?.videoKycStatus === "in_progress" &&
+      userData?.videoKycRoomId ? (
+      <ActionCard
+        icon={<Video size={18} />}
+        title={"Admin started Video KYC"}
+        button={"Join Room"}
+        onClick={() =>
+          router.push(`/video-kyc/${userData.videoKycRoomId}`)
+        }
+      />
+    ) : (
+      <StatusCard
+        icon={<Clock size={18} />}
+        title={"Waiting for admin"}
+        desc={"Please wait for the admin to start your Video KYC session."}
+      />
+    )
+  )
+}
+
+  
       </div>
     </div>
   )

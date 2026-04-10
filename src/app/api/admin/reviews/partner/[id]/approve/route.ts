@@ -44,6 +44,7 @@ if (!partnerDocs || !partnerBank) {
 }
 
 partner.partnerStatus = "approved";
+partner.videoKycStatus = "pending";
 partner.partnerOnBoardingSteps = 4;
 
 await partner.save();
