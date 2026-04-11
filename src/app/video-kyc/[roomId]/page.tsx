@@ -136,7 +136,7 @@ const router = useRouter();
 
   // Start Zego Video Call
   const startCall = async () => {
-    if (!containerRef.current || !userData?.videoKycRoomId) return;
+if (!containerRef.current || !roomId) return;
 
     setLoading(true);
 
@@ -159,8 +159,7 @@ const router = useRouter();
         return;
       }
 
-      const roomID = userData.videoKycRoomId;
-
+const roomID = roomId;
       const kitToken =
         ZegoUIKitPrebuilt.generateKitTokenForTest(
           appId,

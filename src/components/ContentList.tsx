@@ -14,51 +14,35 @@ interface ContentListProps {
 function ContentList({ data, type }: ContentListProps) {
   const router = useRouter();
 
-  // ✅ Validate MongoDB ObjectId
+  // Validate MongoDB ObjectId
   const isValidObjectId = (id: string) =>
     /^[a-fA-F0-9]{24}$/.test(id);
 
-  // ✅ Start Video KYC
-  const handleStartVideoKyc = async (id: string) => {
-    if (!id || !isValidObjectId(id)) {
-      console.error("Invalid Partner ID:", id);
-      alert("Invalid Partner ID. Please refresh the page.");
-      return;
+  // Start Video KYC
+const handleStartVideoKyc = async (id: string) => {
+  if (!id || !/^[a-fA-F0-9]{24}$/.test(id)) {
+    console.error("Invalid Partner ID:", id);
+    return;
+  }
+
+  try {
+    const result = await axios.get(
+      `http://localhost:3001/api/admin/video-kyc/start/${id}`
+    );
+
+    const roomId = result?.data?.roomId;
+
+    if (roomId) {
+      router.refresh(); // Refresh dashboard to update button
     }
-
-    try {
-      console.log("Starting Video KYC for ID:", id);
-
-      const result = await axios.get(
-        `/api/admin/video-kyc/start/${id}`
-      );
-
-      const roomId = result?.data?.roomId;
-
-      if (roomId) {
-        router.push(`/admin/video-kyc/room/${roomId}`);
-      } else {
-        console.error("Room ID not received from API.");
-      }
-      window.location.reload();
-    } catch (error: any) {
-      console.error(
-        "Error starting Video KYC:",
-        error?.response?.data || error.message
-      );
-    }
-  };
-
-  // ✅ Join Existing Room
-  const handleJoinRoom = (roomId: string) => {
-    if (!roomId) {
-      console.error("Room ID is missing.");
-      return;
-    }
-    router.push(`/admin/video-kyc/room/${roomId}`);
-  };
-
-  // ✅ Empty State
+  } catch (error: any) {
+    console.error(
+      "Error starting Video KYC:",
+      error?.response?.data || error.message
+    );
+  }
+};
+  // Empty State
   if (!data || data.length === 0) {
     return (
       <motion.div
@@ -70,7 +54,9 @@ function ContentList({ data, type }: ContentListProps) {
           <CheckCircle2 size={22} className="text-green-400" />
         </div>
         <p className="font-bold text-gray-800 text-base">All caught up!</p>
-        <p className="text-gray-400 mt-1 text-sm">No pending items right now.</p>
+        <p className="text-gray-400 mt-1 text-sm">
+          No pending items right now.
+        </p>
       </motion.div>
     );
   }
@@ -90,22 +76,24 @@ function ContentList({ data, type }: ContentListProps) {
       </div>
 
       {/* List Items */}
-  {data.map((item: any, index: number) => {
-  const name = item?.name || item?.owner?.name || "";
-  const email = item?.email || item?.owner?.email || "";
+      {data.map((item: any, index: number) => {
+        const name = item?.name || item?.owner?.name || "";
+        const email = item?.email || item?.owner?.email || "";
 
-  const itemId =
-    item?._id?.toString() ||
-    item?.id?.toString() ||
-    "";
+        const itemId =
+  (type === "kyc"
+    ? item?._id || item?.partner?._id
+    : item?._id || item?.owner?._id
+  )?.toString() || "";
 
-  const roomId = item?.videoKycRoomId || "";
-  const status = item?.videoKycStatus;
+        const roomId = item?.videoKycRoomId || "";
+        const status = item?.videoKycStatus;
 
-  const reviewHref =
-    type === "partner"
-      ? `/admin/reviews/partner/${itemId}`
-      : `/admin/reviews/vehicle/${itemId}`;
+        const reviewHref =
+          type === "partner"
+            ? `/admin/reviews/partner/${itemId}`
+            : `/admin/reviews/vehicle/${itemId}`;
+
         return (
           <motion.div
             key={itemId || index}
@@ -116,7 +104,7 @@ function ContentList({ data, type }: ContentListProps) {
               y: -3,
               boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
             }}
-            className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 shadow-sm transition-shadow"
+            className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 shadow-sm"
           >
             {/* User Info */}
             <div className="flex items-center gap-3 min-w-0">
@@ -125,7 +113,6 @@ function ContentList({ data, type }: ContentListProps) {
                   <User size={16} />
                 )}
               </div>
-
               <div className="min-w-0">
                 <p className="font-bold text-sm text-gray-900 truncate">
                   {name}
@@ -138,28 +125,29 @@ function ContentList({ data, type }: ContentListProps) {
 
             {/* Action Buttons */}
             <div className="shrink-0">
-              {/* Start Video KYC */}
-              {type === "kyc" && status === "pending" && (
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  disabled={!isValidObjectId(itemId)}
-                  onClick={() => handleStartVideoKyc(itemId)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 disabled:bg-gray-300 text-white text-sm font-semibold transition-colors"
-                >
-                  Start Video KYC <ArrowRight size={15} />
-                </motion.button>
-              )}
+             {/* Start Video KYC */}
+{type === "kyc" && status === "pending" && !roomId && (
+  <motion.button
+    whileTap={{ scale: 0.96 }}
+    onClick={() => handleStartVideoKyc(itemId)}
+    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold"
+  >
+    Start Video KYC <ArrowRight size={15} />
+  </motion.button>
+)}
 
-              {/* Join Room */}
-              {type === "kyc" && status === "in_progress" && (
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => router.push(`/video-kyc/${item.videoKycRoomId}`)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-semibold transition-colors"
-                >
-                  Join Room <ArrowRight size={15} />
-                </motion.button>
-              )}
+{/* Join Call */}
+{type === "kyc" && status === "in_progress" && roomId && (
+  <motion.button
+    whileTap={{ scale: 0.96 }}
+    onClick={() =>
+      router.push(`/admin/video-kyc/room/${roomId}`)
+    }
+    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+  >
+    Join Call <ArrowRight size={15} />
+  </motion.button>
+)}
 
               {/* Review */}
               {(type === "partner" ||
@@ -170,7 +158,7 @@ function ContentList({ data, type }: ContentListProps) {
                   disabled={!isValidObjectId(itemId)}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => router.push(reviewHref)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 disabled:bg-gray-300 text-white text-sm font-semibold transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 disabled:bg-gray-300 text-white text-sm font-semibold"
                 >
                   Review <ArrowRight size={15} />
                 </motion.button>

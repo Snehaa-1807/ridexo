@@ -53,14 +53,10 @@ const AdminDashboard = ({
   };
 
   // Fetch pending KYC data
-  const handleGetPendingKyc = async () => {
-    try {
-      const { data } = await axios.get("/api/admin/video-kyc/pending");
-      setPendingKyc(data);
-    } catch (error) {
-      console.log("Error fetching pending KYC:", error);
-    }
-  };
+const handleGetPendingKyc = async () => {
+  const { data } = await axios.get("/api/admin/video-kyc/pending");
+  setPendingKyc(data);
+};
 
   useEffect(() => {
     handleGetData();

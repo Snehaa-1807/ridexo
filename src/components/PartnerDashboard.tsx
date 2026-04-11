@@ -40,7 +40,21 @@ const PartnerDashboard = () => {
 
   const { userData } = useSelector((state: RootState) => state.user);
   const router = useRouter();
+useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:3001/api/user/me"
+      );
+      // Dispatch to Redux
+      dispatch(setUserData(data));
+    } catch (error) {
+      console.error("Failed to refresh user data", error);
+    }
+  };
 
+  fetchUser();
+}, []);
   useEffect(() => {
     if (userData) {
       setActiveStep(userData.partnerOnBoardingSteps ?? 0);
