@@ -39,7 +39,6 @@ function Page() {
 const [approvedLoading, setApprovedLoading] = useState(false)
 const [rejectLoading, setRejectLoading] = useState(false)
 
-
   const handleGetPartner = async () => {
     try {
       const res = await axios.get(`/api/admin/reviews/partner/${id}`, { withCredentials: true })
@@ -95,7 +94,14 @@ const [rejectLoading, setRejectLoading] = useState(false)
       </div>
     )
   }
+if(loading){
+  return(
+    <div className='min-h-screengrid place-items-center text-gray-500'>
+      Loading Partner....
+    </div>
 
+  )
+}
   const handleApprove = async () => {
     setApprovedLoading(true);
     try {

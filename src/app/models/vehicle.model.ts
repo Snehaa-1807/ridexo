@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-type vehicleType =
+export type vehicleType =
   | "bike"
   | "car"
   | "loading"

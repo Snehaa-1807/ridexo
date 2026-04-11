@@ -35,18 +35,37 @@ const AdminDashboard = ({
   const [activeTab, setActiveTab] = useState<Tab>('partner')
   const [pendingKyc, setPendingKyc] = useState<any[]>([])
 
+  // Convert props to state for dynamic updates
+  const [dashboardStats, setStats] = useState<Stats>(stats)
+  const [pendingPartnerReviews, setPartnerReviews] = useState<any[]>(partnerReviews)
+  const [pendingVehicleReviews, setVehicleReviews] = useState<any[]>(vehicleReviews)
+
+  // Fetch dashboard data
+  const handleGetData = async () => {
+    try {
+      const { data } = await axios.get("/api/admin/dashboard");
+      setStats(data.stats);
+      setPartnerReviews(data.pendingPartnerReviews);
+      setVehicleReviews(data.pendingVehicles);
+    } catch (error) {
+      console.log("Error fetching dashboard data:", error);
+    }
+  };
+
+  // Fetch pending KYC data
   const handleGetPendingKyc = async () => {
     try {
-      const { data } = await axios.get("/api/admin/video-kyc/pending")
-      setPendingKyc(data)
+      const { data } = await axios.get("/api/admin/video-kyc/pending");
+      setPendingKyc(data);
     } catch (error) {
-      console.log("Error fetching pending KYC:", error)
+      console.log("Error fetching pending KYC:", error);
     }
-  }
+  };
 
   useEffect(() => {
-    handleGetPendingKyc()
-  }, [])
+    handleGetData();
+    handleGetPendingKyc();
+  }, []);
 
   return (
     <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200'>
@@ -67,17 +86,37 @@ const AdminDashboard = ({
       <main className='max-w-7xl mx-auto py-12 px-6 space-y-16'>
         {/* KPI Section */}
         <div className='grid grid-cols-2 sm:grid-cols-4 gap-6'>
-          <Kpi label="Total Partners" value={stats?.totalPartners} icon={<Users />} variant="totalPartners" />
-          <Kpi label="Total Approved Partners" value={stats?.totalApprovedPartners} icon={<CheckCircle2 />} variant="approved" />
-          <Kpi label="Total Pending Partners" value={stats?.totalPendingPartners} icon={<Clock />} variant="pending" />
-          <Kpi label="Total Rejected Partners" value={stats?.totalRejectedPartners} icon={<XCircle />} variant="rejected" />
+          <Kpi
+            label="Total Partners"
+            value={dashboardStats?.totalPartners}
+            icon={<Users />}
+            variant="totalPartners"
+          />
+          <Kpi
+            label="Total Approved Partners"
+            value={dashboardStats?.totalApprovedPartners}
+            icon={<CheckCircle2 />}
+            variant="approved"
+          />
+          <Kpi
+            label="Total Pending Partners"
+            value={dashboardStats?.totalPendingPartners}
+            icon={<Clock />}
+            variant="pending"
+          />
+          <Kpi
+            label="Total Rejected Partners"
+            value={dashboardStats?.totalRejectedPartners}
+            icon={<XCircle />}
+            variant="rejected"
+          />
         </div>
 
         {/* Tabs */}
         <div className='bg-white rounded-2xl p-2 shadow-lg border border-gray-100 flex flex-wrap gap-2'>
           <TabButton
             active={activeTab === "partner"}
-            count={partnerReviews?.length ?? 0}
+            count={pendingPartnerReviews?.length ?? 0}
             icon={<Users size={15} />}
             onClick={() => setActiveTab("partner")}
           >
@@ -95,7 +134,7 @@ const AdminDashboard = ({
 
           <TabButton
             active={activeTab === "vehicle"}
-            count={vehicleReviews?.length ?? 0}
+            count={pendingVehicleReviews?.length ?? 0}
             icon={<Truck size={15} />}
             onClick={() => setActiveTab("vehicle")}
           >
@@ -114,7 +153,7 @@ const AdminDashboard = ({
             className="space-y-3"
           >
             {activeTab === "partner" && (
-              <ContentList data={partnerReviews} type="partner" />
+              <ContentList data={pendingPartnerReviews} type="partner" />
             )}
 
             {activeTab === "kyc" && (
@@ -125,7 +164,7 @@ const AdminDashboard = ({
             )}
 
             {activeTab === "vehicle" && (
-              <ContentList data={vehicleReviews} type="vehicle" />
+              <ContentList data={pendingVehicleReviews} type="vehicle" />
             )}
           </motion.div>
         </AnimatePresence>

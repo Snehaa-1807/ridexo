@@ -90,26 +90,22 @@ function ContentList({ data, type }: ContentListProps) {
       </div>
 
       {/* List Items */}
-      {data.map((item: any, index: number) => {
-        const name = item?.name || "Unknown";
-        const email = item?.email || "No Email";
+  {data.map((item: any, index: number) => {
+  const name = item?.name || item?.owner?.name || "";
+  const email = item?.email || item?.owner?.email || "";
 
-        // ✅ Correct ID extraction
-        const itemId =
-          item?._id?.toString() ||
-          item?.id?.toString() ||
-          "";
+  const itemId =
+    item?._id?.toString() ||
+    item?.id?.toString() ||
+    "";
 
-        const roomId = item?.videoKycRoomId || "";
-        const status = item?.videoKycStatus;
+  const roomId = item?.videoKycRoomId || "";
+  const status = item?.videoKycStatus;
 
-        console.log("Partner ID:", itemId);
-
-        const reviewHref =
-          type === "partner"
-            ? `/admin/reviews/partner/${itemId}`
-            : `/admin/reviews/vehicle/${itemId}`;
-
+  const reviewHref =
+    type === "partner"
+      ? `/admin/reviews/partner/${itemId}`
+      : `/admin/reviews/vehicle/${itemId}`;
         return (
           <motion.div
             key={itemId || index}

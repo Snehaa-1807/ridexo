@@ -15,7 +15,7 @@ import {
   XCircle,
   PhoneOff,
 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
 function Page() {
@@ -33,7 +33,7 @@ function Page() {
   const [rLoading, setRLoading] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
-
+const router = useRouter();
   // ✅ Extract roomId correctly
   const params = useParams();
   const roomId = params?.roomId as string;
@@ -97,6 +97,8 @@ function Page() {
         }
       );
       console.log("Approval Response:", data);
+                        router.push("/")
+
     } catch (error: any) {
       console.log(
         error?.response?.data?.message || error.message || error
@@ -120,6 +122,8 @@ function Page() {
         }
       );
       console.log("Rejection Response:", data);
+                        router.push("/")
+
     } catch (error: any) {
       console.log(
         error?.response?.data?.message || error.message || error
@@ -202,14 +206,17 @@ function Page() {
           {userData?.role === "admin" && (
             <>
               <button
-                onClick={() => setShowApprovalModal(true)}
+                onClick={() => setShowApprovalModal(true)
+                }
                 className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-full text-sm flex items-center gap-2 text-white"
               >
                 <CheckCircle size={16} /> Approve
               </button>
 
               <button
-                onClick={() => setShowRejectionModal(true)}
+                onClick={() => setShowRejectionModal(true)
+                  
+                }
                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-full text-sm flex items-center gap-2 text-white"
               >
                 <XCircle size={16} /> Reject
@@ -217,7 +224,8 @@ function Page() {
             </>
           )}
 
-          <button className="bg-red-700 hover:bg-red-800 px-4 py-2 rounded-full text-sm flex items-center gap-2 text-white">
+          <button className="bg-red-700 hover:bg-red-800 px-4 py-2 rounded-full text-sm flex items-center gap-2 text-white"
+          onClick={()=>router.push("/")}>
             <PhoneOff size={16} /> End Call
           </button>
         </div>
