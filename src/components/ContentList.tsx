@@ -20,20 +20,15 @@ function ContentList({ data, type }: ContentListProps) {
 
   // Start Video KYC
 const handleStartVideoKyc = async (id: string) => {
-  if (!id || !/^[a-fA-F0-9]{24}$/.test(id)) {
-    console.error("Invalid Partner ID:", id);
-    return;
-  }
-
   try {
     const result = await axios.get(
-      `http://localhost:3001/api/admin/video-kyc/start/${id}`
+      `/api/admin/video-kyc/start/${id}`
     );
 
     const roomId = result?.data?.roomId;
 
     if (roomId) {
-      router.refresh(); // Refresh dashboard to update button
+      router.push(`/admin/video-kyc/room/${roomId}`);
     }
   } catch (error: any) {
     console.error(

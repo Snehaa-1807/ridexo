@@ -10,9 +10,9 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate admin
     const session = await auth();
 
-    // Ensure only admin can start Video KYC
     if (!session || session.user?.role !== "admin") {
       return NextResponse.json(
         { message: "Unauthorized" },
@@ -22,7 +22,7 @@ export async function GET(
 
     await connectDb();
 
-    // Await params (Next.js 15/16)
+    // Await params (Next.js 15/16 compatible)
     const { id } = await context.params;
 
     // Validate MongoDB ObjectId
@@ -43,17 +43,32 @@ export async function GET(
       );
     }
 
-    // Generate Room ID
+    // Generate Room ID if it doesn't exist
     if (!partner.videoKycRoomId) {
       partner.videoKycRoomId = randomUUID();
     }
 
-    // Update status
+    // Update Video KYC status
     partner.videoKycStatus = "in_progress";
+
+    // ✅ Solution 2: Automatically advance onboarding step to Video KYC
+    if (
+      !partner.partnerOnBoardingSteps ||
+      partner.partnerOnBoardingSteps < 5
+    ) {
+      partner.partnerOnBoardingSteps = 5;
+    }
+
+    // Update timestamp
+    partner.updatedAt = new Date();
+
     await partner.save();
 
     return NextResponse.json(
-      { roomId: partner.videoKycRoomId },
+      {
+        message: "Video KYC started successfully",
+        roomId: partner.videoKycRoomId,
+      },
       { status: 200 }
     );
   } catch (error) {

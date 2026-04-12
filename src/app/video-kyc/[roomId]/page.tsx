@@ -135,57 +135,67 @@ const router = useRouter();
   };
 
   // Start Zego Video Call
-  const startCall = async () => {
-if (!containerRef.current || !roomId) return;
+const startCall = async () => {
+  if (!containerRef.current || !roomId) return;
 
-    setLoading(true);
+  setLoading(true);
+
+  try {
+    const { ZegoUIKitPrebuilt } = await import(
+      "@zegocloud/zego-uikit-prebuilt"
+    );
+
+    const appId = Number(process.env.NEXT_PUBLIC_ZEGO_APP_ID);
+    const serverSecret = process.env.NEXT_PUBLIC_ZEGO_SERVER_SECRET;
+
+    if (!appId || !serverSecret) {
+      console.error("Zego credentials are missing.");
+      return;
+    }
+
+    // Ensure a valid user ID
+    const userId =
+      userData?._id?.toString() ||
+      userData?.id?.toString() ||
+      userData?.email ||
+      `user_${Date.now()}`;
 
     const displayName =
       userData?.role === "admin"
         ? "Admin"
-        : `${userData?.name} (${userData?.email})`;
+        : userData?.name || userData?.email || "Partner";
 
-    try {
-      const { ZegoUIKitPrebuilt } = await import(
-        "@zegocloud/zego-uikit-prebuilt"
+    if (!userId) {
+      console.error("ZEGOCLOUD: userID required!");
+      return;
+    }
+
+    const kitToken =
+      ZegoUIKitPrebuilt.generateKitTokenForTest(
+        appId,
+        serverSecret!,
+        roomId,
+        userId,
+        displayName
       );
 
-      const appId = Number(process.env.NEXT_PUBLIC_ZEGO_APP_ID);
-      const serverSecret =
-        process.env.NEXT_PUBLIC_ZEGO_SERVER_SECRET;
+    const zp = ZegoUIKitPrebuilt.create(kitToken);
 
-      if (!appId || !serverSecret) {
-        console.error("Zego credentials are missing.");
-        return;
-      }
+    zp.joinRoom({
+      container: containerRef.current,
+      scenario: {
+        mode: ZegoUIKitPrebuilt.OneONoneCall,
+      },
+      showPreJoinView: false,
+    });
 
-const roomID = roomId;
-      const kitToken =
-        ZegoUIKitPrebuilt.generateKitTokenForTest(
-          appId,
-          serverSecret,
-          roomID,
-          userData?._id?.toString(),
-          displayName
-        );
-
-      const zp = ZegoUIKitPrebuilt.create(kitToken);
-
-      zp.joinRoom({
-        container: containerRef.current,
-        scenario: {
-          mode: ZegoUIKitPrebuilt.OneONoneCall,
-        },
-        showPreJoinView: false,
-      });
-
-      setJoined(true);
-    } catch (error) {
-      console.error("Error starting call:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setJoined(true);
+  } catch (error) {
+    console.error("Error starting call:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
