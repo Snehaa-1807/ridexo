@@ -1,8 +1,9 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import connectDb from "@/app/lib/db";
 import User from "@/app/models/user.model";
-import Vehicle from "@/app/models/vehicle.model"; // ✅ FIXED (missing import)
+import Vehicle from "@/app/models/vehicle.model";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
     const session = await auth();
 
     if (!session || !session.user?.email || session.user.role !== "admin") {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 400 }); // ✅ FIXED
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const totalPartners = await User.countDocuments({ role: "partner" });
@@ -22,39 +23,39 @@ export async function GET(req: NextRequest) {
     const pendingPartnerUsers = await User.find({
       role: "partner",
       partnerStatus: "pending",
-      partnerOnBoardingSteps: {$gte : 3}
+      partnerOnBoardingSteps: { $gte: 3 },
     });
 
     const partnerIds = pendingPartnerUsers.map((p) => p._id);
-
     const partnerVehicles = await Vehicle.find({ owner: { $in: partnerIds } });
-
     const vehicleTypeMap = new Map(
       partnerVehicles.map((v) => [String(v.owner), v.type])
     );
 
+    // Fixed: key renamed to "pendingPartnerReviews" to match AdminDashboard
     const pendingPartnerReviews = pendingPartnerUsers.map((p) => ({
+      _id: p._id.toString(),
       id: p._id.toString(),
       name: p.name,
       email: p.email,
-      vehicleType: vehicleTypeMap.get(String(p._id))
+      vehicleType: vehicleTypeMap.get(String(p._id)),
     }));
-const pendingVehicles=await Vehicle.find({
-  status:"pending"
-}).populate("owner")
-    return NextResponse.json({
-      pendingVehicles,
-      stats: {
-        totalApprovedPartners: totalApproved,
-        totalPendingPartners: totalPending,
-        totalRejectedPartners: totalRejected,
-        totalPartners: totalPartners,
-      },
-      partnerReviews: pendingPartnerReviews,
-    }, {
-      status: 200
-    });
 
+    const pendingVehicles = await Vehicle.find({ status: "pending" ,baseFare:{$exists:true},pricePerKM:{$exists:true}}).populate("owner");
+
+    return NextResponse.json(
+      {
+        pendingVehicles,
+        pendingPartnerReviews,
+        stats: {
+          totalApprovedPartners: totalApproved,
+          totalPendingPartners: totalPending,
+          totalRejectedPartners: totalRejected,
+          totalPartners: totalPartners,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     return NextResponse.json(
       { message: `Error fetching dashboard data ${error}` },

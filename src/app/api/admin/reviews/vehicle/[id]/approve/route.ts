@@ -6,59 +6,35 @@ import User from "@/app/models/user.model";
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-
-    // Check authentication and admin role
-    if (!session || !session.user?.email || session.user.role !== "admin") {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+    if (!session || session.user?.role !== "admin") {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // Connect to database
     await connectDb();
+    const { id } = await context.params;
 
-    // Get vehicle ID from params
-    const vehicleId = context.params.id;
-
-    // Fetch vehicle and populate owner details
-    const vehicle = await Vehicle.findById(vehicleId).populate("owner");
-
+    const vehicle = await Vehicle.findById(id);
     if (!vehicle) {
-      return NextResponse.json(
-        { message: "vehicle not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "Vehicle not found" }, { status: 404 });
     }
 
     vehicle.status = "approved";
     vehicle.rejectionReason = undefined;
     await vehicle.save();
 
+    // ✅ Step 8 = partner is fully onboarded and LIVE
     const partner = await User.findById(vehicle.owner);
-    if (!partner) {
-      return NextResponse.json(
-        { message: "partner not found" },
-        { status: 400 }
-      );
+    if (partner) {
+      partner.partnerOnBoardingSteps = 8;
+      await partner.save();
     }
 
-    partner.partnerOnBoardingSteps = 7;
-    await partner.save();
-
-    return NextResponse.json(
-      { vehicle },
-      { status: 200 }
-    );
-
+    return NextResponse.json({ message: "Vehicle approved", vehicle }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { message: `vehicle approve error ${error}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: `Approve error: ${error}` }, { status: 500 });
   }
 }

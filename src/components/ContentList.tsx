@@ -2,7 +2,7 @@
 
 import { ArrowRight, CheckCircle2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -13,31 +13,26 @@ interface ContentListProps {
 
 function ContentList({ data, type }: ContentListProps) {
   const router = useRouter();
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  // Validate MongoDB ObjectId
   const isValidObjectId = (id: string) =>
     /^[a-fA-F0-9]{24}$/.test(id);
 
-  // Start Video KYC
-const handleStartVideoKyc = async (id: string) => {
-  try {
-    const result = await axios.get(
-      `/api/admin/video-kyc/start/${id}`
-    );
-
-    const roomId = result?.data?.roomId;
-
-    if (roomId) {
-      router.push(`/admin/video-kyc/room/${roomId}`);
+  const handleStartVideoKyc = async (id: string) => {
+    try {
+      setLoadingId(id);
+      const result = await axios.get(`/api/admin/video-kyc/start/${id}`);
+      const roomId = result?.data?.roomId;
+      if (roomId) {
+        router.push(`/admin/video-kyc/room/${roomId}`);
+      }
+    } catch (error: any) {
+      console.error("Error starting Video KYC:", error?.response?.data || error.message);
+    } finally {
+      setLoadingId(null);
     }
-  } catch (error: any) {
-    console.error(
-      "Error starting Video KYC:",
-      error?.response?.data || error.message
-    );
-  }
-};
-  // Empty State
+  };
+
   if (!data || data.length === 0) {
     return (
       <motion.div
@@ -49,16 +44,13 @@ const handleStartVideoKyc = async (id: string) => {
           <CheckCircle2 size={22} className="text-green-400" />
         </div>
         <p className="font-bold text-gray-800 text-base">All caught up!</p>
-        <p className="text-gray-400 mt-1 text-sm">
-          No pending items right now.
-        </p>
+        <p className="text-gray-400 mt-1 text-sm">No pending items right now.</p>
       </motion.div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {/* Header */}
       <div className="flex items-center justify-between px-1 mb-1">
         <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
           {type === "partner"
@@ -70,19 +62,19 @@ const handleStartVideoKyc = async (id: string) => {
         <p className="text-xs text-gray-400">{data.length} items</p>
       </div>
 
-      {/* List Items */}
       {data.map((item: any, index: number) => {
         const name = item?.name || item?.owner?.name || "";
         const email = item?.email || item?.owner?.email || "";
 
-        const itemId =
-  (type === "kyc"
-    ? item?._id || item?.partner?._id
-    : item?._id || item?.owner?._id
-  )?.toString() || "";
+        const itemId = (
+          type === "kyc"
+            ? item?._id || item?.partner?._id
+            : item?._id || item?.owner?._id
+        )?.toString() || "";
 
         const roomId = item?.videoKycRoomId || "";
         const status = item?.videoKycStatus;
+        const isLoading = loadingId === itemId;
 
         const reviewHref =
           type === "partner"
@@ -95,59 +87,57 @@ const handleStartVideoKyc = async (id: string) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            whileHover={{
-              y: -3,
-              boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-            }}
+            whileHover={{ y: -3, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}
             className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 shadow-sm"
           >
-            {/* User Info */}
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 font-semibold">
-                {name?.charAt(0)?.toUpperCase() || (
-                  <User size={16} />
-                )}
+                {name?.charAt(0)?.toUpperCase() || <User size={16} />}
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-sm text-gray-900 truncate">
-                  {name}
-                </p>
-                <p className="text-xs text-gray-400 truncate">
-                  {email}
-                </p>
+                <p className="font-bold text-sm text-gray-900 truncate">{name}</p>
+                <p className="text-xs text-gray-400 truncate">{email}</p>
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="shrink-0">
-             {/* Start Video KYC */}
-{type === "kyc" && status === "pending" && !roomId && (
-  <motion.button
-    whileTap={{ scale: 0.96 }}
-    onClick={() => handleStartVideoKyc(itemId)}
-    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold"
-  >
-    Start Video KYC <ArrowRight size={15} />
-  </motion.button>
-)}
+              {/* KYC: pending — Start button */}
+              {type === "kyc" && status === "pending" && (
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => handleStartVideoKyc(itemId)}
+                  disabled={isLoading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold disabled:opacity-60"
+                >
+                  {isLoading ? "Starting..." : "Start Video KYC"} <ArrowRight size={15} />
+                </motion.button>
+              )}
 
-{/* Join Call */}
-{type === "kyc" && status === "in_progress" && roomId && (
-  <motion.button
-    whileTap={{ scale: 0.96 }}
-    onClick={() =>
-      router.push(`/admin/video-kyc/room/${roomId}`)
-    }
-    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
-  >
-    Join Call <ArrowRight size={15} />
-  </motion.button>
-)}
+              {/* KYC: in_progress WITH roomId — Join button */}
+              {type === "kyc" && status === "in_progress" && roomId && (
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => router.push(`/admin/video-kyc/room/${roomId}`)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+                >
+                  Join Call <ArrowRight size={15} />
+                </motion.button>
+              )}
 
-              {/* Review */}
-              {(type === "partner" ||
-                status === "approved" ||
-                status === "rejected") && (
+              {/* KYC: in_progress but NO roomId — restart */}
+              {type === "kyc" && status === "in_progress" && !roomId && (
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => handleStartVideoKyc(itemId)}
+                  disabled={isLoading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold disabled:opacity-60"
+                >
+                  {isLoading ? "Starting..." : "Start Video KYC"} <ArrowRight size={15} />
+                </motion.button>
+              )}
+
+              {/* Partner / Vehicle review button */}
+              {(type === "partner" || type === "vehicle") && (
                 <motion.button
                   type="button"
                   disabled={!isValidObjectId(itemId)}

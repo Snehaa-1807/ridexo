@@ -6,52 +6,42 @@ import User from "@/app/models/user.model";
 
 export async function POST(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-
-    // Check authentication and admin role
-    if (!session || !session.user?.email || session.user.role !== "admin") {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+    if (!session || session.user?.role !== "admin") {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-const {reason}=await req.json()
-    // Connect to database
+
     await connectDb();
+    const { id } = await context.params;
 
-    // Get vehicle ID from params
-    const vehicleId = context.params.id;
+    const body = await req.json();
+    const reason = body.rejectionReason || body.reason;
 
-    // Fetch vehicle and populate owner details
-    const vehicle = await Vehicle.findById(vehicleId).populate("owner");
-
-    if (!vehicle) {
-      return NextResponse.json(
-        { message: "Vehicle not found" },
-        { status: 404 }
-      );
+    if (!reason) {
+      return NextResponse.json({ message: "Rejection reason is required" }, { status: 400 });
     }
 
-    // Approve vehicle
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      return NextResponse.json({ message: "Vehicle not found" }, { status: 404 });
+    }
+
     vehicle.status = "rejected";
     vehicle.rejectionReason = reason;
     await vehicle.save();
 
+    // Roll partner back to step 5 so they can resubmit pricing
+    const partner = await User.findById(vehicle.owner);
+    if (partner) {
+      partner.partnerOnBoardingSteps = 5;
+      await partner.save();
+    }
 
-
-    return NextResponse.json(
-      { vehicle },
-      { status: 200 }
-    );
-
-
+    return NextResponse.json({ message: "Vehicle rejected", vehicle }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { message: `Vehicle rejected error: ${error}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: `Reject error: ${error}` }, { status: 500 });
   }
 }

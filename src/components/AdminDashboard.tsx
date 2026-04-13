@@ -33,45 +33,48 @@ const AdminDashboard = ({
 }: AdminDashboardProps) => {
 
   const [activeTab, setActiveTab] = useState<Tab>('partner')
-  const [pendingKyc, setPendingKyc] = useState<any[]>([])
-
-  // Convert props to state for dynamic updates
+  const [pendingKyc, setPendingKyc] = useState<any[]>(partnerkyc ?? [])
   const [dashboardStats, setStats] = useState<Stats>(stats)
-  const [pendingPartnerReviews, setPartnerReviews] = useState<any[]>(partnerReviews)
-  const [pendingVehicleReviews, setVehicleReviews] = useState<any[]>(vehicleReviews)
+  const [pendingPartnerReviews, setPartnerReviews] = useState<any[]>(partnerReviews ?? [])
+  const [pendingVehicleReviews, setVehicleReviews] = useState<any[]>(vehicleReviews ?? [])
 
-  // Fetch dashboard data
   const handleGetData = async () => {
     try {
       const { data } = await axios.get("/api/admin/dashboard");
       setStats(data.stats);
-      setPartnerReviews(data.pendingPartnerReviews);
-      setVehicleReviews(data.pendingVehicles);
+      setPartnerReviews(data.pendingPartnerReviews ?? []);
+      setVehicleReviews(data.pendingVehicles ?? []);
     } catch (error) {
       console.log("Error fetching dashboard data:", error);
     }
   };
 
-  // Fetch pending KYC data
-const handleGetPendingKyc = async () => {
-  const { data } = await axios.get("/api/admin/video-kyc/pending");
-  setPendingKyc(data);
-};
+  const handleGetPendingKyc = async () => {
+    try {
+      const { data } = await axios.get("/api/admin/video-kyc/pending");
+      setPendingKyc(data ?? []);
+    } catch (error) {
+      console.log("Error fetching pending KYC:", error);
+    }
+  };
 
   useEffect(() => {
     handleGetData();
     handleGetPendingKyc();
+    const interval = setInterval(() => {
+      handleGetData();
+      handleGetPendingKyc();
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className='min-h-screen bg-linear-to-br from-gray-100 to-gray-200'>
-      {/* Header */}
+    <div className='min-h-screen bg-gradient-to-br from-gray-100 to-gray-200'>
       <div className='sticky top-0 bg-white/80 backdrop-blur-lg border-b z-40'>
         <div className='max-w-7xl mx-auto h-16 px-6 flex items-center justify-between'>
           <div className='flex items-center gap-3'>
             <Image src="/logo.png" alt="logo" width={44} height={44} />
           </div>
-
           <div className='flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-black text-white'>
             <Users size={14} />
             Admin Dashboard
@@ -80,65 +83,25 @@ const handleGetPendingKyc = async () => {
       </div>
 
       <main className='max-w-7xl mx-auto py-12 px-6 space-y-16'>
-        {/* KPI Section */}
         <div className='grid grid-cols-2 sm:grid-cols-4 gap-6'>
-          <Kpi
-            label="Total Partners"
-            value={dashboardStats?.totalPartners}
-            icon={<Users />}
-            variant="totalPartners"
-          />
-          <Kpi
-            label="Total Approved Partners"
-            value={dashboardStats?.totalApprovedPartners}
-            icon={<CheckCircle2 />}
-            variant="approved"
-          />
-          <Kpi
-            label="Total Pending Partners"
-            value={dashboardStats?.totalPendingPartners}
-            icon={<Clock />}
-            variant="pending"
-          />
-          <Kpi
-            label="Total Rejected Partners"
-            value={dashboardStats?.totalRejectedPartners}
-            icon={<XCircle />}
-            variant="rejected"
-          />
+          <Kpi label="Total Partners" value={dashboardStats?.totalPartners} icon={<Users />} variant="totalPartners" />
+          <Kpi label="Total Approved Partners" value={dashboardStats?.totalApprovedPartners} icon={<CheckCircle2 />} variant="approved" />
+          <Kpi label="Total Pending Partners" value={dashboardStats?.totalPendingPartners} icon={<Clock />} variant="pending" />
+          <Kpi label="Total Rejected Partners" value={dashboardStats?.totalRejectedPartners} icon={<XCircle />} variant="rejected" />
         </div>
 
-        {/* Tabs */}
         <div className='bg-white rounded-2xl p-2 shadow-lg border border-gray-100 flex flex-wrap gap-2'>
-          <TabButton
-            active={activeTab === "partner"}
-            count={pendingPartnerReviews?.length ?? 0}
-            icon={<Users size={15} />}
-            onClick={() => setActiveTab("partner")}
-          >
+          <TabButton active={activeTab === "partner"} count={pendingPartnerReviews?.length ?? 0} icon={<Users size={15} />} onClick={() => setActiveTab("partner")}>
             Partner Reviews
           </TabButton>
-
-          <TabButton
-            active={activeTab === "kyc"}
-            count={pendingKyc?.length ?? partnerkyc?.length ?? 0}
-            icon={<Video size={15} />}
-            onClick={() => setActiveTab("kyc")}
-          >
+          <TabButton active={activeTab === "kyc"} count={pendingKyc?.length ?? 0} icon={<Video size={15} />} onClick={() => setActiveTab("kyc")}>
             KYC Reviews
           </TabButton>
-
-          <TabButton
-            active={activeTab === "vehicle"}
-            count={pendingVehicleReviews?.length ?? 0}
-            icon={<Truck size={15} />}
-            onClick={() => setActiveTab("vehicle")}
-          >
+          <TabButton active={activeTab === "vehicle"} count={pendingVehicleReviews?.length ?? 0} icon={<Truck size={15} />} onClick={() => setActiveTab("vehicle")}>
             Vehicle Reviews
           </TabButton>
         </div>
 
-        {/* Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -148,20 +111,9 @@ const handleGetPendingKyc = async () => {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="space-y-3"
           >
-            {activeTab === "partner" && (
-              <ContentList data={pendingPartnerReviews} type="partner" />
-            )}
-
-            {activeTab === "kyc" && (
-              <ContentList
-                data={pendingKyc.length ? pendingKyc : partnerkyc}
-                type="kyc"
-              />
-            )}
-
-            {activeTab === "vehicle" && (
-              <ContentList data={pendingVehicleReviews} type="vehicle" />
-            )}
+            {activeTab === "partner" && <ContentList data={pendingPartnerReviews} type="partner" />}
+            {activeTab === "kyc" && <ContentList data={pendingKyc} type="kyc" />}
+            {activeTab === "vehicle" && <ContentList data={pendingVehicleReviews} type="vehicle" />}
           </motion.div>
         </AnimatePresence>
       </main>

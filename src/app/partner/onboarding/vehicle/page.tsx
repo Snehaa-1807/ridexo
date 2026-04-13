@@ -50,6 +50,7 @@ function Page() {
       
       setLoading(false);
       router.push("/partner/onboarding/documents");
+      
 
     } catch (error: any) {
       console.error("handleVehicle error:", error);
@@ -79,6 +80,7 @@ function Page() {
         setVehicleModel(data?.vehicleModel || "");
 
         setLoading(false); // ✅ FIXED (missing)
+        
       } catch (error: any) {
         console.error("handleGetVehicle error:", error);
         setError(error?.response?.data?.message ?? "something went wrong");

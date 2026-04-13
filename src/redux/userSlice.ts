@@ -1,42 +1,41 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
-// Define a user type for the slice state
 interface IUser {
   id: string
+  _id?: string
   name: string
   email: string
   role?: string
   partnerOnBoardingSteps?: number
   partnerStatus?: string
   rejectionReason?: string
+  videoKycStatus?: string
+  videoKycRoomId?: string
+  videoKycRejectionReason?: string
 }
 
-// Define a type for the slice state
 interface IuserState {
   userData: IUser | null
 }
 
-// Define the initial state using that type
 const initialState: IuserState = {
   userData: null,
 }
 
 export const userSlice = createSlice({
   name: 'user',
-  // `createSlice` will infer the state type from the `initialState` argument
   initialState,
   reducers: {
-    setUserData: (state,action) =>{
-        state.userData = action.payload
-
-    }   
-    
+    setUserData: (state, action: PayloadAction<IUser>) => {
+      state.userData = action.payload
+    },
+    clearUserData: (state) => {
+      state.userData = null
+    }
   },
 })
 
-export const { setUserData } = userSlice.actions
-
-// Other code such as selectors can use the imported `RootState` type
+export const { setUserData, clearUserData } = userSlice.actions
 
 export default userSlice.reducer

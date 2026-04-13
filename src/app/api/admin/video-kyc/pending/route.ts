@@ -1,4 +1,7 @@
+export const dynamic = 'force-dynamic';
+
 import { auth } from "@/auth";
+
 import connectDb from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import User from "@/app/models/user.model";
@@ -8,17 +11,14 @@ export async function GET() {
     const session = await auth();
 
     if (!session || session.user?.role !== "admin") {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     await connectDb();
 
+    // Fixed: removed partnerOnBoardingSteps:4 filter — was blocking step=5 partners
     const partners = await User.find({
       role: "partner",
-      partnerOnBoardingSteps: 4,
       videoKycStatus: { $in: ["pending", "in_progress"] },
     })
       .select("_id name email videoKycStatus videoKycRoomId")

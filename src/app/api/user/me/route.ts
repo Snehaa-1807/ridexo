@@ -3,6 +3,9 @@ import connectDb from "@/app/lib/db";
 import User from "@/app/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 
+// Force this route to always fetch fresh data — never use Next.js cache
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     await connectDb();
@@ -16,9 +19,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const user = await User.findOne({
-      email: session.user.email,
-    });
+    const user = await User.findOne({ email: session.user.email }).lean();
 
     if (!user) {
       return NextResponse.json(
@@ -30,22 +31,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
         partnerOnBoardingSteps: user.partnerOnBoardingSteps,
         partnerStatus: user.partnerStatus,
         rejectionReason: user.rejectionReason,
+        videoKycStatus: user.videoKycStatus,
+        videoKycRoomId: user.videoKycRoomId,
+        videoKycRejectionReason: user.videoKycRejectionReason,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     );
-
   } catch (error: any) {
-    console.error("GET ME ERROR:", error); // 🔥 VERY IMPORTANT
-
-    return NextResponse.json(
-      { message: error.message },
-      { status: 500 }
-    );
+    console.error("GET ME ERROR:", error);
+    return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }
