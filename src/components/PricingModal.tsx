@@ -1,5 +1,6 @@
 'use client'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
+import { motion } from "framer-motion"   // ✅ FIX
 import { IVehicle } from '@/app/models/vehicle.model'
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'

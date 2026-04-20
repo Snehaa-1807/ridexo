@@ -1,6 +1,6 @@
 'use client'
-import { ArrowLeft, Bike, Car, CheckCircle, ChevronRight, LocateFixed, MapPin, Phone, Truck } from 'lucide-react'
-import { motion } from 'motion/react'
+import { ArrowLeft, Bike, Car, CheckCircle, ChevronRight, LocateFixed, MapPin, Navigation, Phone, Truck } from 'lucide-react'
+import { motion } from "framer-motion"   // ✅ FIX
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import axios from 'axios'
@@ -45,13 +45,13 @@ function page() {
   const [dropLat, setDropLat] = useState<number>()
   const [dropLon, setDropLon] = useState<number>()
   const [locating, setLocating] = useState(false)
-
+const canContinue=!!(vehicle && mobile && pickUp && drop && pickUp && pickUpLat && pickUpLon && dropLat && dropLon)
   const [pickUpSuggestions, setPickUpSuggestions] = useState<Place[]>([])
   const [dropSuggestions, setDropSuggestions] = useState<Place[]>([])
 
   const progress = [!!vehicle, !!mobile, !!pickUp, !!drop].filter(Boolean).length
 
-  const searchAddress = async (q: string, setResults: (r: Place[]) => void) => {
+  const searchAddress = async (q: string, setResults: (r: Place[]) => void,restrict?:string | null) => {
     try {
       if (!q || q.trim().length < 3) {
         setResults([])
@@ -62,7 +62,7 @@ function page() {
         `https://photon.komoot.io/api/?q=${encodeURIComponent(q.trim())}&limit=8&lang=en`
       );
 
-      const results: Place[] = (data.features ?? []).map((f: any) => ({
+      let results: Place[] = (data.features ?? []).map((f: any) => ({
         id: String(f.properties.osm_id),
         name: f.properties.name,
         city: f.properties.city,
@@ -72,7 +72,9 @@ function page() {
         lat: f.geometry.coordinates[1],
         lng: f.geometry.coordinates[0],
       }))
-
+if(restrict){
+  results=results.filter(r=>r.country==restrict)
+}
       setResults(results)
     } catch (error) {
       console.log(error);
@@ -145,7 +147,7 @@ function page() {
         </div>
 
         <div className='bg-white rounded-3xl border border-zinc-200 shadow-[0_8px_40px_rgba(0,0,08)] overflow-visible'>
-          <div className='h-1 bg-zinc-900 w-full' />
+          <div className='h-1 bg-zinc-900 w-[80%] m-auto' />
           <div className='p-6 space-y-7'>
 
             {/* Step 1 — Vehicle */}
@@ -307,12 +309,14 @@ function page() {
                     <input
                       onChange={(e) => {
                         setDrop(e.target.value)
-                        searchAddress(e.target.value, setDropSuggestions)
+                        searchAddress(e.target.value, setDropSuggestions,pickUpCountry)
                       }}
+                      disabled={!pickUpCountry}
                       value={drop}
-                      placeholder="Drop location"
+                      placeholder={pickUpCountry?"Drop location": "Select Pick up location first"}
                       className="flex-1 bg-transparent text-sm font-semibold text-zinc-900 placeholder:text-zinc-400 outline-none"
                     />
+                    <Navigation size={14} className='text-zinc-300 flex-shrink-0'/>
                   </div>
                   {/* ✅ Fix 4 & 5: dropdown moved inside relative container, onClick on each item */}
                   <AnimatePresence>
@@ -339,7 +343,7 @@ function page() {
                             }}
                             className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0 cursor-pointer"
                           >
-                            <MapPin size={13} className='text-zinc-400 flex-shrink-0' />
+                            <Navigation size={13} className='text-zinc-400 flex-shrink-0' />
                             <span className='text-sm text-zinc-800 font-medium truncate'>{suggestion(p)}</span>
                             <ChevronRight size={13} className='text-zinc-300 flex-shrink-0 ml-auto' />
                           </motion.div>
@@ -352,6 +356,18 @@ function page() {
               </div>
             </motion.div>
 
+
+<motion.button
+  whileTap={{ scale: 0.97 }}
+  whileHover={canContinue ? { scale: 1.02 } : {}}
+  disabled={!canContinue}
+  onClick={()=>{
+    router.push(`/user/search?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobile=${encodeURIComponent(mobile)}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}$droplon=${dropLon}`)
+  }}
+  className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-black disabled:opacity-35 text-white font-black text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors shadow-lg disabled:shadow-none"
+>
+  <span>Continue</span>
+</motion.button>
           </div>
         </div>
       </motion.div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Bike, Car, Truck, Bus } from "lucide-react";
 import { useSelector } from "react-redux";

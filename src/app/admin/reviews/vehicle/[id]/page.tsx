@@ -5,7 +5,8 @@ import axios from 'axios'
 import { ArrowLeft, CheckCircle, CircleDashed, Clock, ImageIcon, IndianRupee, ShieldCheck, Truck, XCircle } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
+import { motion } from "framer-motion"   // ✅ FIX
 import AnimatedCard from '@/components/AnimatedCard'
 
 interface IVehicleDetail {

@@ -10,6 +10,8 @@ import PublicHome from "@/components/PublicHome";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
+import GeoUpdate from "@/components/GeoUpdater";
+import GeoUpdater from "@/components/GeoUpdater";
 
 interface PartnerReview {
   id: string;
@@ -139,6 +141,7 @@ export default function Home() {
 
   return (
     <div className="w-full min-h-screen bg-white">
+      <GeoUpdater userId={user._id}/>
       <Nav />
       <PublicHome />
       <Footer />

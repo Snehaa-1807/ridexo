@@ -1,5 +1,5 @@
 'use client'
-import {motion} from 'motion/react'
+import { motion } from "framer-motion"   // ✅ FIX
 import React from 'react'
 
 function StatusCard({icon,title,desc}:any) {
