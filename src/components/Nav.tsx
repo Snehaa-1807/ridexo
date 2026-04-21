@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation"; // ✅ added router
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AuthModal from "./AuthModal";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -25,14 +25,28 @@ function Nav() {
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
+const[pendingCount,setPendingCount]=useState()
   const { data: session } = useSession();
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
     setProfileOpen(false);
   };
+const fetchCount = async () => {
+  try {
+    const { data } = await axios.get("/api/partner/bookings/pending-requests-count")
+    console.log(data)
+    setPendingCount(data)
+  } catch (error) {
+    console.log(error)
+  }
+}
 
+useEffect(() => {
+  if (useData?.role === "partner") {
+    fetchCount()
+  }
+}, [userData?.role])
   return (
     <>
       <motion.div className="fixed top-3 left-1/2 -translate-x-1/2 w-[94%] md:w-[86%] z-50 rounded-full bg-[#0B0B0B] text-white py-4">
@@ -42,7 +56,19 @@ function Nav() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex gap-8">
-            {Nav_Items.map((i) => {
+            {userData?.role === "partner" && (
+  <>
+    <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/"}>Home</Link>
+    <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/partner/pending-requests"}>Pending Requests
+    <span className="absolute -top-2 -right-5 w-6 h-6 bg-white text-black text-xs rounded-full flex items-center justify-center font-bold">
+  {pendingCount ?? 0}
+</span>
+    </Link>
+    <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/partner/bookings"}>Bookings</Link>
+    <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href={"/partner/active-ride"}>Active Ride</Link>
+  </>
+):
+Nav_Items.map((i) => {
               const href =
                 i === "Home"
                   ? "/"
@@ -59,7 +85,9 @@ function Nav() {
                   {i}
                 </Link>
               );
-            })}
+            })
+}
+            
           </div>
 
           {/* Right Section */}

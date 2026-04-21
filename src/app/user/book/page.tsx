@@ -58,9 +58,18 @@ const canContinue=!!(vehicle && mobile && pickUp && drop && pickUp && pickUpLat 
         return
       }
 
-      const { data } = await axios.get(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(q.trim())}&limit=8&lang=en`
-      );
+     const { data } = await axios.get(
+  "https://api.geoapify.com/v1/geocode/autocomplete",
+  {
+    params: {
+      text: q.trim(),
+      apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+      filter: "countrycode:in", // India ke liye fix
+      limit: 5,
+    
+    }
+  }
+)
 
       let results: Place[] = (data.features ?? []).map((f: any) => ({
         id: String(f.properties.osm_id),
@@ -93,9 +102,16 @@ if(restrict){
     navigator.geolocation.getCurrentPosition(async ({ coords }) => {
       try {
         const { data } = await axios.get(
-          `https://photon.komoot.io/reverse?lon=${coords.longitude}&lat=${coords.latitude}`
-        );
-
+  "https://api.geoapify.com/v1/geocode/reverse",
+  {
+    params: {
+      lat: coords.latitude,
+      lon: coords.longitude,
+      apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+      filter: " countrycode: in" 
+    }
+  }
+)
         if (data.features.length) {
           const p = data.features[0].properties;
           const address = [p.name, p.street, p.city, p.state, p.country]

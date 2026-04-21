@@ -44,8 +44,19 @@ function SearchMap({ pickUp, drop, onChange, onDistance }: props) {
 
   const geoCoding = async (q: string): Promise<[number, number] | null> => {
     try {
-      const { data } = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1`)
-      if (!data.features.length) return null
+const { data } = await axios.get(
+  "https://api.geoapify.com/v1/geocode/autocomplete",
+  {
+    params: {
+      text: q.trim(),
+      apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+      filter: "countrycode:in", // India ke liye fix
+      limit: 1,
+    
+    }
+  }
+)     
+ if (!data.features.length) return null
       const [lon, lat] = data.features[0].geometry.coordinates
       return [lat, lon]
     } catch (error) {
@@ -56,8 +67,16 @@ function SearchMap({ pickUp, drop, onChange, onDistance }: props) {
 const reverseGeoCoding = async (lat: number, lon: number): Promise<string | null> => {
   try {
     const { data } = await axios.get(
-      `https://photon.komoot.io/reverse?lon=${lon}&lat=${lat}`
-    );
+  "https://api.geoapify.com/v1/geocode/reverse",
+  {
+    params: {
+      lat,
+      lon,
+      apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+      filter: " countrycode: in" 
+    }
+  }
+)
 
     if (!data.features.length) return null;
 

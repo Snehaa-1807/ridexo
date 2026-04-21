@@ -15,7 +15,22 @@ const VEHICLE_META: any = {
   loading: { label: "Loading", Icon: Truck },
   truck: { label: "Truck", Icon: Truck },
 };
-
+interface IVehicle {
+  _id:string,
+  owner: string,
+  type: vehicleType,
+  vehicleModel: string,
+  number: string,
+  imageUrl?: string,
+  baseFare?: number,
+  pricePerKM?: number,
+  waitingCharge?: number,
+  status: "approved" | "pending" | "rejected",
+  rejectionReason?: string,
+  isActive: boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
 function Page() {
   const router = useRouter()
   const params = useSearchParams()
@@ -208,7 +223,8 @@ function Page() {
                       drop,
                       vehicle: v.type,
                       driverId: v.owner,
-                      fare: String(fare),
+         vehicleId: String(v._id),
+                      fare: String(Math.round(v.baseFare! + (v.pricePerKm! *km))),
                       pickUpLat: String(pickUpLat),
                       pickUpLon: String(pickUpLon),
                       dropLat: String(dropLat),
