@@ -10,7 +10,6 @@ import PublicHome from "@/components/PublicHome";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
-import GeoUpdate from "@/components/GeoUpdater";
 import GeoUpdater from "@/components/GeoUpdater";
 
 interface PartnerReview {
@@ -27,6 +26,8 @@ interface AdminStats {
   totalPartners: number;
 }
 
+type SessionUser = { role?: string };
+
 export default function Home() {
   const { data: session, status } = useSession();
   const [adminData, setAdminData] = useState<{
@@ -37,34 +38,22 @@ export default function Home() {
   const userData = useSelector((state: RootState) => state.user.userData);
   const router = useRouter();
 
-  console.log("Home page - session status:", status, "session:", session, "userData:", userData);
+  const userRole = (session?.user as SessionUser)?.role;
 
-  // Debug session changes
   useEffect(() => {
-    console.log("Session changed:", { status, session, userData });
-  }, [status, session, userData]);
-
-  // Redirect pending partners to status page
-  useEffect(() => {
-    if (status === "authenticated" && (session?.user as any)?.role === "partner" && userData?.partnerStatus !== "approved") {
+    if (status === "authenticated" && userRole === "partner" && userData?.partnerStatus !== "approved") {
       router.push("/partner/status");
     }
-  }, [status, session, userData, router]);
+  }, [status, userRole, userData, router]);
 
   useEffect(() => {
     const fetchAdminData = async () => {
-      if (status === "authenticated" && (session?.user as any)?.role === "admin") {
-        console.log("Fetching admin data for user:", session?.user);
+      if (status === "authenticated" && userRole === "admin") {
         try {
-          const response = await fetch("/api/admin/dashboard", {
-            credentials: "include",
-          });
+          const response = await fetch("/api/admin/dashboard", { credentials: "include" });
           if (response.ok) {
             const data = await response.json();
-            console.log("Admin data fetched:", data);
             setAdminData(data);
-          } else {
-            console.error("Failed to fetch admin data:", response.status);
           }
         } catch (error) {
           console.error("Failed to fetch admin data:", error);
@@ -76,7 +65,7 @@ export default function Home() {
     if (status !== "loading") {
       fetchAdminData();
     }
-  }, [status, session?.user]);
+  }, [status, userRole]);
 
   if (status === "loading" || loading) {
     return (
@@ -96,27 +85,25 @@ export default function Home() {
     );
   }
 
-  if ((session.user as any)?.role === "partner") {
-    // Pending partners are redirected to status page, approved partners see dashboard
+  if (userRole === "partner") {
     if (userData?.partnerStatus === "approved") {
       return (
         <div className="w-full min-h-screen bg-white">
           <Nav />
+          <GeoUpdater userId={userData._id ?? userData.id} />
           <PartnerDashboard />
           <Footer />
         </div>
       );
-    } else {
-      // Show loading while redirecting
-      return (
-        <div className="w-full min-h-screen bg-white flex items-center justify-center">
-          <div className="text-lg">Redirecting to partner status...</div>
-        </div>
-      );
     }
+    return (
+      <div className="w-full min-h-screen bg-white flex items-center justify-center">
+        <div className="text-lg">Redirecting to partner status...</div>
+      </div>
+    );
   }
 
-  if ((session.user as any)?.role === "admin" && adminData) {
+  if (userRole === "admin" && adminData) {
     return (
       <div className="w-full min-h-screen bg-white">
         <AdminDashboard
@@ -130,8 +117,7 @@ export default function Home() {
     );
   }
 
-  // Fallback for admin loading
-  if ((session.user as any)?.role === "admin") {
+  if (userRole === "admin") {
     return (
       <div className="w-full min-h-screen bg-white flex items-center justify-center">
         <div className="text-lg">Loading admin dashboard...</div>
@@ -141,7 +127,6 @@ export default function Home() {
 
   return (
     <div className="w-full min-h-screen bg-white">
-      <GeoUpdater userId={user._id}/>
       <Nav />
       <PublicHome />
       <Footer />
