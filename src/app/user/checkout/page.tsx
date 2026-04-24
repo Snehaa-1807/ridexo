@@ -100,20 +100,67 @@ useEffect(()=>{
 if(status!=="requested")
 return
 
-const poll=
-setInterval(
-fetchActiveBooking,
-3000
+const poll=setInterval(
+async()=>{
+
+try{
+
+const {data}=await axios.get(
+"/api/booking/active"
+)
+
+if(!data.booking)
+return
+
+const s=
+data.booking.bookingStatus
+
+setBooking(data.booking)
+
+if(s==="awaiting_payment"){
+clearInterval(poll)
+
+setStatus(
+"awaiting_payment"
+)
+
+return
+}
+
+if(s==="rejected"){
+clearInterval(poll)
+setStatus("rejected")
+return
+}
+
+}
+catch(err){
+console.log(err)
+}
+
+},
+2000
 )
 
 return()=>clearInterval(poll)
 
 },[status])
-  useEffect(() => {
-    if (status !== "awaiting_payment") return
-    const t = setTimeout(() => setStatus("payment"), 2000)
-    return () => clearTimeout(t)
-  }, [status])
+
+useEffect(()=>{
+
+if(status!=="awaiting_payment")
+return
+
+const t=
+setTimeout(()=>{
+setStatus("payment")
+},2500)
+
+return()=>{
+clearTimeout(t)
+}
+
+},[status])
 
   return (
     <div className="min-h-screen bg-zinc-100 px-4 py-12">
@@ -296,6 +343,41 @@ return()=>clearInterval(poll)
                     </motion.button>
                   </motion.div>
                 )}
+
+                {status==="rejected" && (
+<motion.div
+key="rejected"
+initial={{opacity:0}}
+animate={{opacity:1}}
+className="flex flex-col flex-1 items-center justify-center gap-6"
+>
+<XCircle
+size={60}
+className="text-red-500"
+/>
+
+<h3 className="text-2xl font-black">
+Ride Rejected
+</h3>
+
+<p className="text-zinc-400">
+Driver declined request
+</p>
+
+<button
+onClick={()=>
+router.push("/user")
+}
+className="
+px-6 py-3 rounded-xl
+bg-black text-white font-bold
+"
+>
+Book Another Ride
+</button>
+
+</motion.div>
+)}
               </AnimatePresence>
             </div>
           </motion.div>
