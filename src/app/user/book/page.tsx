@@ -459,8 +459,9 @@ className='px-4 py-3 flex items-center gap-3 hover:bg-zinc-50 cursor-pointer'
 <button
 disabled={!canContinue}
 onClick={()=>{
-router.push(`/user/search?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobile=${mobile}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}&droplon=${dropLon}`)
-}}
+router.push(
+  `/user/search?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobile=${encodeURIComponent(mobile)}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}&droplon=${dropLon}`
+)}}
 className='w-full h-14 rounded-2xl bg-black text-white font-bold disabled:opacity-40'
 >
 Continue

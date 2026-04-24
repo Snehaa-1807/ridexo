@@ -21,18 +21,31 @@ type Status = "idle" | "requested" | "awaiting_payment" | "rejected" | "expired"
 function Page() {
   const router = useRouter()
   const params = useSearchParams()
-  const [pickUp] = useState(params.get("pickUp") || "")
-  const [drop] = useState(params.get("drop") || "")
+
   const mobile = params.get("mobile")
-  const pickUpLat = Number(params.get("pickUpLat"))
-  const pickUpLon = Number(params.get("pickUpLon"))
-  const dropLat = Number(params.get("dropLat"))
-  const dropLon = Number(params.get("dropLon"))
   const fare = params.get("fare") || ""
   const vehicle = params.get("vehicle") || ""
   const driverId = params.get("driverId") || ""
   const vehicleId = params.get("vehicleId") || ""
+const [pickUp] = useState(
+params.get("pickup") || ""
+)
 
+const [drop] = useState(
+params.get("drop") || ""
+)
+
+const pickUpLat=
+Number(params.get("pickuplat"))
+
+const pickUpLon=
+Number(params.get("pickuplon"))
+
+const dropLat=
+Number(params.get("droplat"))
+
+const dropLon=
+Number(params.get("droplon"))
   const vehicleKey = vehicle as VehicleType
   const { Icon, label } = VEHICLE_META[vehicleKey] ?? { Icon: Car, label: vehicle }
 
@@ -82,8 +95,20 @@ function Page() {
     }
   }
 
-  useEffect(() => { fetchActiveBooking() }, [])
+useEffect(()=>{
 
+if(status!=="requested")
+return
+
+const poll=
+setInterval(
+fetchActiveBooking,
+3000
+)
+
+return()=>clearInterval(poll)
+
+},[status])
   useEffect(() => {
     if (status !== "awaiting_payment") return
     const t = setTimeout(() => setStatus("payment"), 2000)

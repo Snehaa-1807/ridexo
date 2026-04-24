@@ -2,45 +2,50 @@
 
 import { getSocket } from '@/app/lib/socket'
 import React, { useEffect, useRef } from 'react'
+import axios from 'axios'
 
 function GeoUpdater({ userId }: { userId: string }) {
-  const socketRef = useRef<any>(null)
+  const socketRef = useRef<ReturnType<typeof getSocket> | null>(null)
 
   useEffect(() => {
     if (!userId) return
     if (!navigator.geolocation) return
 
     socketRef.current = getSocket()
-
     socketRef.current.emit("identity", userId)
 
     const watcher = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords  // ✅ FIX
+      async (position) => {
+        const { latitude, longitude } = position.coords
 
-        socketRef.current.emit("update-location", {
+        // Update via socket (real-time)
+        socketRef.current?.emit("update-location", {
           userId,
           latitude,
-          longitude
+          longitude,
         })
+
+        // Also save to DB so $near query works
+        try {
+          await axios.post("/api/partner/go-online", { latitude, longitude })
+        } catch (e) {
+          console.log("go-online error", e)
+        }
       },
       (error) => {
-        console.log(error) // ✅ FIX
+        console.log("GeoUpdater error:", error)
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 5000
+        maximumAge: 5000,
       }
     )
 
     return () => {
       navigator.geolocation.clearWatch(watcher)
-
-      // ✅ optional but recommended
       socketRef.current?.disconnect()
     }
-
-  }, [userId]) // ✅ FIX
+  }, [userId])
 
   return null
 }

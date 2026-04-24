@@ -1,5 +1,4 @@
 import connectDb from "@/app/lib/db";
-import User from "@/app/models/user.model";
 import Vehicle from "@/app/models/vehicle.model";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -7,9 +6,11 @@ export async function POST(req: NextRequest) {
   try {
     await connectDb();
 
-    const { latitude, longitude, vehicleType } = await req.json();
+    const body = await req.json();
+    console.log("=== NEARBY API ===", body);
 
-    // ✅ FIX validation block
+    const { latitude, longitude, vehicleType } = body;
+
     if (!latitude || !longitude) {
       return NextResponse.json(
         { message: "coordinates not found" },
@@ -17,45 +18,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ FIX $geometry + syntax
-    const partner = await User.find({
-      role: "partner",
-      isOnline: true,
-      partnerStatus: "approved",
-      location: {
-        $near: {
-          $geometry: {
-            type: "Point",
-            coordinates: [longitude, latitude]
-          },
-          $maxDistance: 10000
-        }
-      }
-    });
-
-    // ✅ FIX variable name
-    const partnerIds = partner.map(p => p._id);
-
-    if (partnerIds.length === 0) {
-      return NextResponse.json(
-        [],
-        { status: 200 }
-      );
-    }
-
     const vehicles = await Vehicle.find({
-      owner: { $in: partnerIds },
-      type: vehicleType,
       status: "approved",
-      isActive: true
+      isActive: true,
+      ...(vehicleType ? { type: vehicleType } : {}),
     }).lean();
 
+    console.log(`Vehicles (type: ${vehicleType}):`, vehicles.length);
     return NextResponse.json(vehicles, { status: 200 });
 
   } catch (error) {
-    return NextResponse.json(
-      { message: `nearby vehicles error ${error}` },
-      { status: 500 }
-    );
+    console.error("NEARBY ERROR:", error);
+    return NextResponse.json({ message: String(error) }, { status: 500 });
   }
 }

@@ -108,7 +108,7 @@ try{
 
 setActionLoading(id)
 
-await axios.get(
+await axios.post(
 `/api/partner/bookings/${id}/accept`
 )
 
@@ -129,7 +129,7 @@ try{
 
 setActionLoading(id)
 
-await axios.get(
+await axios.post(
 `/api/partner/bookings/${id}/reject`
 )
 
