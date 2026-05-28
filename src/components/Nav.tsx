@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import axios from "axios";
 import { Bike, Car, ChevronRight, LogOut, Truck, Menu, X } from "lucide-react";
+import { getSocket } from "@/app/lib/socket";
 
 const Nav_Items = ["Home", "Bookings", "About Us", "Contact"];
 
@@ -43,7 +44,21 @@ function Nav() {
       fetchCount();
     }
   }, [userData?.role]);
+useEffect(() => {
 
+  const socket = getSocket()
+
+  socket.on("new-booking", (data) => {
+ setPendingCount((prev) => prev + 1)
+  })
+
+  return () => {
+    socket.off("new-booking")
+  }
+
+}, [])
+
+return
   return (
     <>
       <motion.div className="fixed top-3 left-1/2 -translate-x-1/2 w-[94%] md:w-[86%] z-50 rounded-full bg-[#0B0B0B] text-white py-4">
@@ -55,21 +70,50 @@ function Nav() {
             {userData?.role === "partner" ? (
               <>
                 <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href="/">Home</Link>
-                <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href="/partner/pending-requests">
+
+                <Link
+                  className="relative text-sm font-medium text-gray-300 hover:text-white transition"
+                  href="/partner/pending-requests"
+                >
                   Pending Requests
+
                   <span className="absolute -top-2 -right-5 w-6 h-6 bg-white text-black text-xs rounded-full flex items-center justify-center font-bold">
                     {pendingCount}
                   </span>
                 </Link>
-                <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href="/partner/bookings">Bookings</Link>
-                <Link className="relative text-sm font-medium text-gray-300 hover:text-white transition" href="/partner/active-ride">Active Ride</Link>
+
+                <Link
+                  className="relative text-sm font-medium text-gray-300 hover:text-white transition"
+                  href="/partner/bookings"
+                >
+                  Bookings
+                </Link>
+
+                <Link
+                  className="relative text-sm font-medium text-gray-300 hover:text-white transition"
+                  href="/partner/active-ride"
+                >
+                  Active Ride
+                </Link>
               </>
             ) : (
-              Nav_Items.map((i) => {
-                const href = i === "Home" ? "/" : `/${i.toLowerCase().replace(/\s+/g, "-")}`;
+              Nav_Items.map((i, index) => {
+                let href;
+
+                if (i === "Home") {
+                  href = "/";
+                } else {
+                  href = `/user/${i.toLowerCase()}`;
+                }
+
                 const active = href === pathName;
+
                 return (
-                  <Link key={i} href={href} className={active ? "text-white" : "text-gray-400"}>
+                  <Link
+                    key={i}
+                    href={href}
+                    className={active ? "text-white" : "text-gray-400"}
+                  >
                     {i}
                   </Link>
                 );
@@ -80,44 +124,77 @@ function Nav() {
           <div className="flex items-center gap-3">
             <div className="hidden md:block">
               {!session?.user ? (
-                <button onClick={() => setAuthOpen(true)} className="bg-white text-black px-4 py-1 rounded-full">
+                <button
+                  onClick={() => setAuthOpen(true)}
+                  className="bg-white text-black px-4 py-1 rounded-full"
+                >
                   Login
                 </button>
               ) : (
                 <div className="relative">
-                  <button onClick={() => setProfileOpen((p) => !p)} className="w-10 h-10 bg-white text-black rounded-full">
+                  <button
+                    onClick={() => setProfileOpen((p) => !p)}
+                    className="w-10 h-10 bg-white text-black rounded-full"
+                  >
                     {session.user.name?.charAt(0).toUpperCase()}
                   </button>
+
                   <AnimatePresence>
                     {profileOpen && (
                       <motion.div className="absolute top-12 right-0 bg-white text-black p-4 rounded-xl w-64">
-                        <p className="font-semibold">{session.user.name}</p>
-                        <p className="text-xs mb-3">{(session.user as { role?: string })?.role}</p>
+
+                        <p className="font-semibold">
+                          {session.user.name}
+                        </p>
+
+                        <p className="text-xs mb-3">
+                          {(session.user as { role?: string })?.role}
+                        </p>
+
                         {(session.user as { role?: string })?.role !== "partner" && (
                           <div
                             className="w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl cursor-pointer"
                             onClick={() => router.push("/partner/status")}
                           >
                             <div className="flex -space-x-2">
-                              <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center"><Bike size={14} /></div>
-                              <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center"><Car size={14} /></div>
-                              <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center"><Truck size={14} /></div>
+                              <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center">
+                                <Bike size={14} />
+                              </div>
+
+                              <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center">
+                                <Car size={14} />
+                              </div>
+
+                              <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center">
+                                <Truck size={14} />
+                              </div>
                             </div>
+
                             Become Partner
+
                             <ChevronRight size={16} className="ml-auto" />
                           </div>
                         )}
-                        <button onClick={handleLogout} className="w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl mt-2">
+
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl mt-2"
+                        >
                           <LogOut size={16} />
                           Logout
                         </button>
+
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               )}
             </div>
-            <button className="md:hidden" onClick={() => setMobileOpen((p) => !p)}>
+
+            <button
+              className="md:hidden"
+              onClick={() => setMobileOpen((p) => !p)}
+            >
               {mobileOpen ? <X /> : <Menu />}
             </button>
           </div>
@@ -126,27 +203,64 @@ function Nav() {
         <AnimatePresence>
           {mobileOpen && (
             <motion.div className="md:hidden px-4 mt-4 flex flex-col gap-4">
-              {Nav_Items.map((i) => {
-                const href = i === "Home" ? "/" : `/${i.toLowerCase().replace(/\s+/g, "-")}`;
+
+              {Nav_Items.map((i, index) => {
+                let href;
+
+                if (i === "Home") {
+                  href = "/";
+                } else {
+                  href = `/user/${i.toLowerCase()}`;
+                }
+
                 return (
-                  <Link key={i} href={href} onClick={() => setMobileOpen(false)} className="text-gray-300">{i}</Link>
+                  <Link
+                    key={i}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className="text-gray-300"
+                  >
+                    {i}
+                  </Link>
                 );
               })}
+
               {!session?.user ? (
-                <button onClick={() => { setAuthOpen(true); setMobileOpen(false); }} className="bg-white text-black px-4 py-2 rounded-full">
+                <button
+                  onClick={() => {
+                    setAuthOpen(true);
+                    setMobileOpen(false);
+                  }}
+                  className="bg-white text-black px-4 py-2 rounded-full"
+                >
                   Login
                 </button>
               ) : (
                 <>
                   {(session.user as { role?: string })?.role !== "partner" && (
-                    <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => { router.push("/partner/status"); setMobileOpen(false); }}>
-                      <Bike size={14} /><Car size={14} /><Truck size={14} />
+                    <div
+                      className="flex items-center gap-2 mt-2 cursor-pointer"
+                      onClick={() => {
+                        router.push("/partner/status");
+                        setMobileOpen(false);
+                      }}
+                    >
+                      <Bike size={14} />
+                      <Car size={14} />
+                      <Truck size={14} />
+
                       <span>Become Partner</span>
+
                       <ChevronRight size={14} className="ml-auto" />
                     </div>
                   )}
-                  <button onClick={handleLogout} className="flex items-center gap-2 mt-2">
-                    <LogOut size={16} />Logout
+
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 mt-2"
+                  >
+                    <LogOut size={16} />
+                    Logout
                   </button>
                 </>
               )}
@@ -155,7 +269,10 @@ function Nav() {
         </AnimatePresence>
       </motion.div>
 
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+      />
     </>
   );
 }

@@ -5,6 +5,7 @@ import { ArrowRight, Banknote, Bike, Car, CheckCircle, Clock, CreditCard, Indian
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
+import { getSocket } from '@/app/lib/socket';
 
 type VehicleType = "bike" | "auto" | "car" | "loading" | "truck";
 
@@ -16,7 +17,7 @@ const VEHICLE_META: Record<VehicleType, { label: string; Icon: React.ElementType
   truck: { label: "Truck", Icon: Truck },
 };
 
-type Status = "idle" | "requested" | "awaiting_payment" | "rejected" | "expired" | "cancelled" | "payment" | "confirmed";
+type Status = "idle" | "requested" | "awaiting_payment" | "rejected" | "expired"  | "payment" | "confirmed";
 
 function Page() {
   const router = useRouter()
@@ -74,7 +75,108 @@ Number(params.get("droplon"))
       console.log(error)
     }
   }
+  useEffect(() => {
 
+  const socket = getSocket()
+
+  socket.on("accept-booking", (data) => {
+    setStatus(data)
+  })
+ socket.on("accept-booking", (data) => {
+    setStatus(data)
+  })
+  socket.on("reject-booking", (data) => {
+    setStatus(data)
+  })
+  return () => {
+    socket.off("accept-booking")
+    socket.off("reject-booking")
+  }
+
+}, [])
+
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+
+        if (typeof window === "undefined") {
+            resolve(false)
+            return;
+        }
+
+        if ((window as any).Razorpay) {
+            resolve(true)
+            return;
+        }
+const script=document.createElement("script")
+
+script.src = "https://checkout.razorpay.com/v1/checkout.js"
+
+script.onload = () => resolve(true)
+
+script.onerror = () => resolve(false)
+
+document.body.appendChild(script)    })
+}
+
+const handleConfirmPayment = async () => {
+if(!booking || !paymentMethod) return;
+setLoading(true)
+    try {
+
+        if (paymentMethod == "online") {
+
+            const razorpayLoaded = await loadRazorpayScript()
+
+            if (!razorpayLoaded) {
+                alert("razorpay script failed to load")
+            }
+
+            const { data } = await axios.post("/api/payment/create", {
+                bookingId: booking._id
+            })
+const paymentObject = new (window as any).Razorpay({
+    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    amount: data.amount,
+    currency: "INR",
+    name: "RYDEX",
+    description: "Ride Payment",
+    order_id: data.orderId,
+    handler: async function (response: any) {
+
+    const { data } = await axios.post("/api/payment/verify", {
+        bookingId: booking._id,
+        ...response
+    })
+setLoading(false)
+
+    if (data.success) {
+      setStatus("confirmed")
+        window.location.href = `/ride/${booking._id}`
+    }
+
+}
+})
+
+paymentObject.open()
+
+    }
+    else{
+      const {data}= await axios.get(`/api/booking/${booking._id}/confirm`)
+      setLoading(false)
+
+if (data.success){
+  setStatus("confirmed")
+              window.location.href = `/ride/${booking._id}`
+            }
+    } 
+  }catch (error) {
+console.log(error)
+setLoading(false)
+
+    }
+
+}
   const fetchActiveBooking = async () => {
     try {
       const { data } = await axios.get("/api/booking/active")
@@ -89,7 +191,7 @@ Number(params.get("droplon"))
     try {
       if (!booking?._id) return
       const { data } = await axios.get(`/api/booking/${booking._id}/cancel`)
-      console.log(data)
+setStatus("idle")
     } catch (error) {
       console.log(error)
     }
@@ -249,7 +351,7 @@ clearTimeout(t)
             <div className="h-1 bg-zinc-900" />
             <div className="flex-1 p-8 sm:p-10 flex flex-col">
               <AnimatePresence mode="wait">
-                {status === "idle" && (
+                {(status === "idle" || status == "rejected" )&& (
                   <motion.div key="idle" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }} className="flex flex-col flex-1 justify-between">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400 mb-1">Ready to go?</p>
@@ -338,12 +440,81 @@ clearTimeout(t)
                         )
                       })}
                     </div>
-                    <motion.button whileTap={{ scale: 0.97 }} className="w-full h-14 bg-zinc-900 hover:bg-black text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-colors shadow-md mt-auto">
-                      {paymentMethod === "cash" ? <><Banknote size={16} /><span>Confirm Cash Ride</span></> : <><span>Proceed to Payment</span><ArrowRight size={16} /></>}
+                    <motion.button whileTap={{ scale: 0.97 }} className="w-full h-14 bg-zinc-900 hover:bg-black text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-colors shadow-md mt-auto" onClick={handleConfirmPayment}>
+                      {
+loading ? 
+<Loader2 size={17} className="animate-spin" />
+: paymentMethod == 'cash'
+? <><Banknote size={16} /><span>Confirm Cash Ride</span></>
+: <><span>Proceed to Payment</span><ArrowRight size={16} /></>}
+
+                        
                     </motion.button>
                   </motion.div>
                 )}
 
+{status === "confirmed" && (
+  <motion.div
+    key="confirmed"
+    initial={{ opacity: 0, scale: 0.94 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.4 }}
+    className="flex flex-col flex-1 items-center justify-center gap-6 text-center"
+>
+    <motion.div
+    initial={{ scale: 0, rotate: -20 }}
+    animate={{ scale: 1, rotate: 0 }}
+    transition={{ type: "spring", stiffness: 240, damping: 14, delay: 0.1 }}
+    className="relative"
+>
+    <div className="w-24 h-24 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center">
+        <CheckCircle size={44} className="text-zinc-900" />
+    </div>
+
+    {[0, 1].map((i) => (
+        <motion.div
+initial={{ scale: 1, opacity: 0.5 }}
+animate={{ scale: 2.2 + i * 0.6, opacity: 0 }}
+transition={{ duration: 0.9, delay: 0.2 + i * 0.15 }}
+className="absolute inset-0 rounded-full border-2 border-zinc-900"
+/>    ))}
+
+</motion.div>
+<div>
+<motion.h3
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.3 }}
+    className="text-2xl font-black text-zinc-900 mb-1"
+>
+    Ride Confirmed!
+</motion.h3>
+
+<motion.p
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.4 }}
+    className="text-zinc-400 text-sm font-medium max-w-xs"
+>
+    Your driver is on the way. Track live from the ride screen.
+</motion.p>
+</div>
+<motion.button
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.5 }}
+    whileTap={{ scale: 0.97 }}
+    whileHover={{ scale: 1.03 }}
+    onClick={() => { window.location.href = `/ride/${booking._id}`; }}
+    className="flex items-center gap-2.5 bg-zinc-900 hover:bg-black text-white font-black text-sm px-8 py-4 rounded-2xl transition-colors shadow-md"
+>
+    Track Your Ride
+</motion.button>
+</motion.div>
+)}
+</AnimatePresence>
+</div>
                 {status==="rejected" && (
 <motion.div
 key="rejected"

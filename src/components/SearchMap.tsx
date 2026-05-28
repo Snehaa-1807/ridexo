@@ -72,42 +72,91 @@ return null
 
 
 /* LABELLED PICKUP MARKER */
-const pickUpIcon=new L.DivIcon({
-html:`
-<div style="
-      background:#111111;
-color:white;
-padding:8px 14px;
-border-radius:999px;
-font-size:12px;
-font-weight:700;
-box-shadow:0 4px 10px rgba(0,0,0,.15)">
-Pickup
-</div>
-`,
-className:'',
-iconSize:[80,36]
+const pickUpIcon = new L.DivIcon({
+  html: `
+    <div style="display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.28))">
+
+      <div style="
+        background:#0a0a0a;
+        color:#fff;
+        padding:5px 13px;
+        border-radius:100px;
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:0.1em;
+        text-transform:uppercase;
+        white-space:nowrap;
+        font-family:system-ui"
+      >
+        PICKUP
+      </div>
+
+      <div style="width:2px;height:9px;background:#0a0a0a"></div>
+
+      <div style="
+        width:10px;
+        height:10px;
+        background:#0a0a0a;
+        border-radius:50%;
+        border:2.5px solid #fff;
+        box-shadow:0 2px 6px rgba(0,0,0,0.3)"
+      >
+      </div>
+
+    </div>
+  `,
+
+  className: "",
+
+  iconSize: [90, 58],
+
+  iconAnchor: [45, 58]
+
 })
 
 
 /* LABELLED DROP MARKER */
-const dropIcon=new L.DivIcon({
-html:`
-<div style="
-  background:#ffffff;
-      color:#111111;
-padding:8px 14px;
-border-radius:999px;
-font-size:12px;
-font-weight:700;
-box-shadow:0 4px 10px rgba(0,0,0,.15)">
-Drop
-</div>
-`,
-className:'',
-iconSize:[70,36]
-})
+const dropIcon = new L.DivIcon({
+  html: `
+    <div style="display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.28))">
 
+      <div style="
+        background:#dc2626;
+        color:#fff;
+        padding:5px 13px;
+        border-radius:100px;
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:0.1em;
+        text-transform:uppercase;
+        white-space:nowrap;
+        font-family:system-ui"
+      >
+        DROP
+      </div>
+
+      <div style="width:2px;height:9px;background:#dc2626"></div>
+
+      <div style="
+        width:10px;
+        height:10px;
+        background:#dc2626;
+        border-radius:50%;
+        border:2.5px solid #fff;
+        box-shadow:0 2px 6px rgba(0,0,0,0.3)"
+      >
+      </div>
+
+    </div>
+  `,
+
+  className: "",
+
+  iconSize: [90, 58],
+
+  iconAnchor: [45, 58]
+
+})
 
 
 export default function SearchMap({

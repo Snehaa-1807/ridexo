@@ -15,6 +15,8 @@ import {
 BookingStatus,
 PaymentStatus
 } from '@/app/models/booking.model'
+import { useRouter } from 'next/dist/client/components/navigation'
+import { getSocket } from '@/app/lib/socket'
 
 
 interface IBooking{
@@ -65,7 +67,7 @@ export default function Page(){
 const [bookings,setBookings]=useState<IBooking[]>([])
 const [loading,setLoading]=useState(true)
 const [actionLoading,setActionLoading]=useState<string | null>(null)
-
+const router = useRouter()
 
 
 const fetchPendingRequests=async()=>{
@@ -113,7 +115,7 @@ await axios.post(
 )
 
 await fetchPendingRequests()
-
+router.push(`/partner/bookings`)
 }catch(error){
 console.log(error)
 }
@@ -126,7 +128,7 @@ setActionLoading(null)
 
 const handleReject=async(id:string)=>{
 try{
-
+window.location.reload()
 setActionLoading(id)
 
 await axios.post(
@@ -148,6 +150,19 @@ setActionLoading(null)
 useEffect(()=>{
 fetchPendingRequests()
 },[])
+useEffect(() => {
+
+  const socket = getSocket()
+console.log(socket)
+  socket.on("new-booking", (data) => {
+setBookings((prev) => [...prev, data])  
+})
+
+  return () => {
+    socket.off("new-booking")
+  }
+
+}, [])
 
 
 
