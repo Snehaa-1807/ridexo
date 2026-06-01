@@ -44,29 +44,14 @@ createdAt?:Date
 updatedAt?:Date
 }
 const bookingSchema=new mongoose.Schema<IBooking>({
-    user:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        required:true
-    },
-    driver:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        required:true
-    },
-    vehicle:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        required:true
-    },
-    pickUpAddress:{
-        type:String,
-        required:true
-    },
-    dropAddress:{
-        type:String,
-        required:true
-    },
+   _id?:mongoose.Schema.Types.ObjectId,
+    user:mongoose.Schema.Types.ObjectId,
+    driver:mongoose.Schema.Types.ObjectId,
+    
+    vehicle:mongoose.Schema.Types.ObjectId,
+      
+    pickUpAddress:String,
+    dropAddress:String,
     pickUpLocation:{
         type:{
             type:String,

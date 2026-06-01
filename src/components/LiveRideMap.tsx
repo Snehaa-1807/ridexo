@@ -1,13 +1,19 @@
 import L from 'leaflet'
-import error from 'next/dist/api/error'
 import axios from 'node_modules/axios/index.cjs'
 import React, { useEffect, useState } from 'react'
 import { MapContainer, Marker, Polyline, TileLayer } from 'react-leaflet'
 
 type Props = {
-  driverLocation: [number, number] | null,
-  pickUpLocation: [number, number] | null,
+  driverLocation: [number, number] | null
+  pickUpLocation: [number, number] | null
   dropLocation: [number, number] | null
+  mapStatus: "arriving" | "ongoing" | "completed"
+  onStats?: (data: {
+    distanceToPickup: number
+    etaToPickup: number
+    distanceToDrop: number
+    etaToDrop: number
+  }) => void
 }
 const pickUpIcon = new L.DivIcon({
   html: `
@@ -129,8 +135,8 @@ const driverIcon = new L.DivIcon({
     <path
       d="M5 11L6.5 6.5H17.5L19 11"
       stroke="white"
-      stroke-width="1.6"
-      stroke-linecap="round"
+      strokeWidth="1.6"
+      strokeLinecap="round"
     />
 
     <rect
@@ -140,7 +146,7 @@ const driverIcon = new L.DivIcon({
       height="7"
       rx="2"
       stroke="white"
-      stroke-width="1.6"
+      strokeWidth="1.6"
     />
 
     <circle cx="7.5" cy="18.5" r="1.5" fill="white" />
@@ -150,7 +156,7 @@ const driverIcon = new L.DivIcon({
     <path
       d="M3 14H21"
       stroke="white"
-      stroke-width="1"
+      strokeWidth="1"
       opacity="0.35"
     />
 
@@ -170,14 +176,15 @@ function LiveRideMap({
   driverLocation,
   pickUpLocation,
   dropLocation,
-  mapStatus
+  mapStatus,
+  onStats
 }: Props) {
   const [routeToPickUp, setRouteToPickUp] = useState<[number, number][]>([])
     const [routeToDrop, setRouteToDrop] = useState<[number, number][]>([])
   
   useEffect(() => {
 
-  if (!driverLocation) return;
+  if (!driverLocation || !pickUpLocation || !dropLocation) return;
 
   const [pLat, pLon] = pickUpLocation as [number, number]
   const [dLat, dLon] = dropLocation as [number, number]
@@ -226,6 +233,13 @@ const dropRoute = await getRoute(
         dropRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
       )
      }
+onStats?.({
+  distanceToPickup:(pickUpRoute?.distance??0)/1000,
+etaToPickup:(pickUpRoute?.duration??0)/60,
+distanceToDrop:(dropRoute?.distance??0)/1000,
+etaToDrop:(dropRoute?.duration??0)/60
+})
+
     }
 else{
     setRouteToPickUp([])
@@ -240,14 +254,24 @@ else{
         dropRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
       )
      }
+     onStats?.({
+  distanceToPickup:0,
+etaToPickup:0,
+distanceToDrop:(dropRoute?.distance??0)/1000,
+etaToDrop:(dropRoute?.duration??0)/60
+})
 }
-  } catch (error) {
-
-  }console.log(error)
-
+ } catch (error) {
+  console.log(error)
 }
 fetchRoutes()
-}, [driverLocation, mapStatus])
+}, [
+  driverLocation,
+  pickUpLocation,
+  dropLocation,
+  mapStatus,
+  onStats
+])
 const showPickMarker=mapStatus==="arriving" 
 const showPickUpRoute=mapStatus==="arriving"  && routeToPickUp.length>0
 const showDropRoute=mapStatus!=="completed"

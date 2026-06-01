@@ -30,7 +30,7 @@ const booking = await Booking.findOne({
   bookingStatus: {
     $in: ["confirmed", "started", "completed"]
   }
-})
+}).populate("user vehicle driver")
   return NextResponse.json(
         booking,
         { status: 200 }
@@ -42,7 +42,7 @@ const booking = await Booking.findOne({
       message: `get active ride for partner error ${error}`
     },
     {
-      status: 400
+      status: 500
     }
   )
 

@@ -4,6 +4,10 @@ import React, { useEffect, useState } from "react";
 import { IBooking } from "../bookings/page";
 import LiveRideMap from "@/components/LiveRideMap";
 import { motion } from "motion/react";
+import { ChevronUp, Zap } from "lucide-react";
+import PanelContent from "@/components/PanelContent";
+import { BookingStatus, PaymentStatus } from "@/app/models/booking.model";
+import { getSocket } from "@/app/lib/socket";
 const MAP_STATUS: Record<
   BookingStatus,
   "arriving" | "ongoing" | "completed"
@@ -17,6 +21,24 @@ const MAP_STATUS: Record<
   cancelled: "completed",
   rejected: "completed",
   expired: "completed",
+};
+const PAYMENT_BADGE: Record<PaymentStatus, { label: string; cls: string }> = {
+  pending: {
+    label: "Pending",
+    cls: "bg-amber-100 text-amber-700",
+  },
+  paid: {
+    label: "Paid",
+    cls: "bg-emerald-100 text-emerald-700",
+  },
+  cash: {
+    label: "Cash",
+    cls: "bg-zinc-100 text-zinc-700",
+  },
+  failed: {
+    label: "Failed",
+    cls: "bg-red-100 text-red-700",
+  },
 };
 const STATUS_LABEL: Record<
   BookingStatus,
@@ -84,13 +106,17 @@ requested: {
 function page() {
 const [booking, setBooking] = useState<IBooking | null>(null)
 const [loading, setLoading] = useState(true)
-
 const [driverPos, setDriverPos] = useState<[Number, Number] | null>(null)
-
 const [pickUpPos, setPickUpPos] = useState<[Number, Number] | null>(null)
-
 const [dropPos, setDropPos] = useState<[Number, Number] | null>(null)
-  useEffect(() => {
+const[distanceToPickup,setDistanceToPickup]=useState(0)  
+const[distanceToDrop,setDistanceToDrop]=useState(0)  
+const[etaToPickup,setEtaToPickup]=useState(0)  
+const[etaToDrop,setEtaToDrop]=useState(0)  
+const[status,setStatus]=useState("")
+const[expanded,setExpanded]=useState(false)
+const [chatOpen, setChatOpen] = useState(false)
+useEffect(() => {
 
     async function fetch() {
 setLoading(true)
@@ -102,6 +128,7 @@ setLoading(true)
 
         console.log(data)
         setBooking(data)
+        setStatus(data.bookingStatus)
         setPickUpPos([data.pickUpLocation.coordinates[1], data.pickUpLocation.coordinates[0]])
         setDropPos([data.dropLocation.coordinates[1], data.dropLocation.coordinates[0]])
 
@@ -119,11 +146,27 @@ setLoading(true)
     fetch()
 
   }, [])
+const onChatToggle=()=>{
+  setChatOpen(prev => !prev)
+}
+useEffect(() => {
+  if(!booking?._id) return;
+  const socket = getSocket();
+
+  socket.emit("join-ride", booking?._id);
+socket.on("driver-Location",({latitude,longitude})=>{
+    setDriverPos([latitude, longitude])
+  return () => {{
+
+    socket.off("join-ride")
+    socket.off("driver-Location")
+  }};
+}, [booking?._id]);
 
 useEffect(() => {
 
   if (!navigator.geolocation) return;
-
+const socket=getSocket() 
   const watchId = navigator.geolocation.watchPosition(
 
     (pos) => {
@@ -132,7 +175,7 @@ useEffect(() => {
       const lon = pos.coords.longitude
 
       setDriverPos([lat, lon])
-
+socket.emit("driver-Location-Update",{bookingId:booking?._id,latitude:lat,longitude:lon,status:status })
     },
 
     (error) => {
@@ -151,7 +194,7 @@ useEffect(() => {
     navigator.geolocation.clearWatch(watchId)
   }
 
-}, [])
+}, [booking?._id ])
 if(loading){
     return (
 
@@ -172,7 +215,14 @@ if(loading){
 )
 }
 const cfg=STATUS_LABEL[booking?.bookingStatus!?? "confirmed"]
-  return (
+const canChat=booking?.bookingStatus==="confirmed" 
+const isActive=["confirmed","started"].includes(status)
+const displayEta=status==="confirmed"?.etaToPickup:etaToDrop
+const displayDistance=status==="confirmed"?.distanceToPickup:distanceToDrop
+const paymentStatus=PAYMENT_BADGE[booking?.paymentStatus!??"pending"] 
+const panelProps={{isActive,displayDistance,displayEta,canChat,status,cfg, booking, paymentStatus, chatOpen,currentRole: "driver", onChatToggle}} />
+
+return (
 
     <div className='h-screen w-full bg-zinc-100 flex flex-col lg:flex-row overflow-hidden'>
 <div className='relative flex-1 h-full z-0'>
@@ -181,6 +231,17 @@ const cfg=STATUS_LABEL[booking?.bookingStatus!?? "confirmed"]
           pickUpLocation={pickUpPos}
           dropLocation={dropPos}
           mapStatus={MAP_STATUS[booking?.bookingStatus!]}
+          onStats={
+           ({ distanceToPickup,
+            distanceToDrop,
+            etaToPickup,
+            etaToDrop})=>{
+              setDistanceToPickup(distanceToPickup)
+              setDistanceToDrop(distanceToDrop)
+              setEtaToPickup(etaToPickup)
+              setEtaToDrop(etaToDrop)
+            }
+          }
         />
         <motion.div
   initial={{ opacity: 0, y: -16 }}
@@ -216,15 +277,87 @@ const cfg=STATUS_LABEL[booking?.bookingStatus!?? "confirmed"]
 
     <div className='flex items-center justify-between'>
 
-      <h1></h1>
+      <h1 className="text-white text-xl font-bold">Active Ride</h1>
+{isActive && (
+      <div className='flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full'>
+        <Zap size={12} className="text-amber-400"/>
+        <span>{Math.round(displayEta)} min</span>
+      </div>
 
-      <div></div>
+)}
 
     </div>
 
   </div>
+<div className="flex-1 flex flex-col overflow-hidden">
+  <div className="flex-1 overflow-y-auto scrollbar-hide">
+<PanelContent {...panelProps} />
+  </div>
+</div>
+
 
 </motion.div>
+<div className="lg:hidden fixed bottom-0 left-0 right-0 z-20 pointer-events-none">
+  <motion.div
+    className="bg-white rounded-t-3xl shadow-2xl pointer-events-auto overflow-hidden flex flex-col"
+    animate={{ height: expanded ? "82vh" : 142 }}
+    transition={{
+      type: "spring",
+      stiffness: 320,
+      damping: 38,
+    }}
+  >
+<div className="flex-shrink-0 cursor-pointer select-none" onClick={()=>setExpanded(p=>!p)}>
+  <div className="pt-3 pb-1">
+    <div className="w-10 h-1 bg-zinc-200 rounded-full mx-auto"/>
+  </div>
+  <div className="px-5 py-3 flex items-center justify-between">
+  <div className="flex items-center gap-3">
+    <span
+      className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cfg.dot}`}
+    />
+
+    <div>
+      <p className="text-sm font-bold text-zinc-900 leading-tight">
+        {cfg.label}
+      </p>
+
+      <p className="text-xs text-zinc-400 leading-tight">
+        {cfg.sublabel}
+      </p>
+    </div>
+  </div>
+  <div className="flex items-center gap-3">
+  {isActive && (
+    <div className="text-right">
+      <p className="text-2xl font-black text-zinc-900 leading-none">
+        {Math.round(displayEta)}
+      </p>
+
+      <p className="text-[10px] text-zinc-400 uppercase tracking-wider">
+        min
+      </p>
+    </div>
+  )}
+  <motion.div
+  animate={{ rotate: expanded ? 180 : 0 }}
+  transition={{ duration: 0.28 }}
+  className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center"
+>
+  <ChevronUp
+    size={16}
+    className="text-zinc-600"
+  />
+</motion.div>
+</div>
+</div>
+<div className="h-px bg-zinc-100 mx-5"/>
+  </div>
+  <div className="flex-1 overflow-y-auto min-h-0">
+    <PanelContent {...panelProps} />
+  </div>
+  </motion.div>
+</div>
     </div>
 
   )
