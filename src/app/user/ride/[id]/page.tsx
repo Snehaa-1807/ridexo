@@ -1,3 +1,5 @@
+"use client";
+
 import { IBooking, BookingStatus, PaymentStatus } from "@/app/models/booking.model";
 import CompletedScreen from "@/components/CompletedScreen";
 import PanelContent from "@/components/PanelContent";

@@ -243,7 +243,7 @@ function Page() {
                           {b.paymentStatus}
                         </span>
                       </div>
-                      {(b.bookingStatus == "confirmed" || b.bookingStatus == "started" || b.bookingStatus == "completed") && (
+                      {['confirmed', 'started', 'completed'].includes(b.bookingStatus) && (
                       <div className='flex items-center gap-2'>
                         <button
                           onClick={() => router.push(`/user/ride/${b._id}`)}

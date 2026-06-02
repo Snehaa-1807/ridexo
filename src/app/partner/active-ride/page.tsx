@@ -826,3 +826,5 @@ return (
   )
 
 }
+
+export default page;

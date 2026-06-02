@@ -1,13 +1,13 @@
 import connectDb from "@/app/lib/db";
 import ChatMessage from "@/app/models/chatMessage.model";
 import { NextRequest, NextResponse } from "next/server";
-import axios, { post } from "node_modules/axios/index.cjs";
-const geminiUrl=process.env.GEMINI_API_URL
+import axios from "axios";
+const geminiUrl = process.env.GEMINI_API_URL ?? ""
 export async function POST(req: NextRequest) {
   try {
     await connectDb();
-const { lastMessage = "", role } = await req.json()
-const prompt = `You are an AI reply suggestion system for a vehicle booking chat app.
+    const { lastMessage = "", role = "USER" } = await req.json()
+    const prompt = `You are an AI reply suggestion system for a vehicle booking chat app.
 
 Generate short, smart, human-like quick reply suggestions based on:
 - ROLE (DRIVER or USER)

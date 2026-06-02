@@ -1,5 +1,7 @@
+"use client";
+
 import L from 'leaflet'
-import axios from 'node_modules/axios/index.cjs'
+import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { MapContainer, Marker, Polyline, TileLayer } from 'react-leaflet'
 

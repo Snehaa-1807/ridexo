@@ -1,8 +1,15 @@
 import Razorpay from "razorpay";
 
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-})
+export function getRazorpayClient() {
+  const key_id = process.env.RAZORPAY_KEY_ID;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
 
-export default razorpay
+  if (!key_id || !key_secret) {
+    throw new Error("Razorpay credentials are not configured");
+  }
+
+  return new Razorpay({
+    key_id,
+    key_secret,
+  });
+}

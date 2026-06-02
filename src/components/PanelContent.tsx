@@ -1,4 +1,6 @@
-import React, { useEffect } from "react";
+"use client";
+
+import React from "react";
 import { useSelector } from "react-redux";
 import { Bike, Car, Clock, IndianRupee, MessageCircle, Phone, Truck, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";

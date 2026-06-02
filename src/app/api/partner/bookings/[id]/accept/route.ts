@@ -1,7 +1,7 @@
 import connectDb from "@/app/lib/db"
 import Booking from "@/app/models/booking.model"
 import {NextRequest,NextResponse} from "next/server"
-import axios from "node_modules/axios/index.cjs"
+import axios from "axios"
 
 export async function POST(
 req:NextRequest,
