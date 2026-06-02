@@ -3,6 +3,7 @@ import Booking from "@/app/models/booking.model"
 import User from "@/app/models/user.model"
 import { auth } from "@/auth"
 import mongoose from "mongoose"
+import axios from "axios"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {

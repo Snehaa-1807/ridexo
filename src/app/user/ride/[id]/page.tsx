@@ -1,11 +1,102 @@
-import { IBooking } from "@/app/models/booking.model";
-import LiveRideMap from "@/components/LiveRideMap";
+import { IBooking, BookingStatus, PaymentStatus } from "@/app/models/booking.model";
+import CompletedScreen from "@/components/CompletedScreen";
 import PanelContent from "@/components/PanelContent";
 import axios from "axios";
 import { ChevronUp, Zap } from "lucide-react";
-import { motion } from "motion/react";
-import { useParams } from "next/dist/client/components/navigation";
+import { motion } from "framer-motion";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+const LiveRideMap = dynamic(() => import("@/components/LiveRideMap"), {
+  ssr: false
+});
+import { getSocket } from "@/app/lib/socket";
+
+const MAP_STATUS: Record<BookingStatus, "arriving" | "ongoing" | "completed"> = {
+  idle: "arriving",
+  requested: "arriving",
+  awaiting_payment: "arriving",
+  confirmed: "arriving",
+  started: "ongoing",
+  completed: "completed",
+  cancelled: "completed",
+  rejected: "completed",
+  expired: "completed",
+};
+
+const PAYMENT_BADGE: Record<PaymentStatus, { label: string; cls: string }> = {
+  pending: {
+    label: "Pending",
+    cls: "bg-amber-100 text-amber-700",
+  },
+  paid: {
+    label: "Paid",
+    cls: "bg-emerald-100 text-emerald-700",
+  },
+  cash: {
+    label: "Cash",
+    cls: "bg-zinc-100 text-zinc-700",
+  },
+  failed: {
+    label: "Failed",
+    cls: "bg-red-100 text-red-700",
+  },
+};
+
+const STATUS_LABEL: Record<
+  BookingStatus,
+  {
+    label: string;
+    sublabel: string;
+    dot: string;
+  }
+> = {
+  idle: {
+    label: "Awaiting Confirmation",
+    sublabel: "Booking is being processed",
+    dot: "bg-amber-400",
+  },
+  requested: {
+    label: "Awaiting Confirmation",
+    sublabel: "Booking is being processed",
+    dot: "bg-amber-400",
+  },
+  awaiting_payment: {
+    label: "Payment Pending",
+    sublabel: "Customer payment is pending",
+    dot: "bg-purple-400",
+  },
+  confirmed: {
+    label: "Heading to Pickup",
+    sublabel: "Drive to the pickup location",
+    dot: "bg-amber-400",
+  },
+  started: {
+    label: "Ride in Progress",
+    sublabel: "Heading to drop location",
+    dot: "bg-emerald-400",
+  },
+  completed: {
+    label: "Ride Completed",
+    sublabel: "Trip has ended successfully",
+    dot: "bg-zinc-400",
+  },
+  cancelled: {
+    label: "Ride Cancelled",
+    sublabel: "This ride was cancelled",
+    dot: "bg-red-400",
+  },
+  rejected: {
+    label: "Ride Rejected",
+    sublabel: "Ride was rejected",
+    dot: "bg-red-400",
+  },
+  expired: {
+    label: "Request Expired",
+    sublabel: "Booking timed out",
+    dot: "bg-orange-400",
+  },
+};
 
 function Page() {
   const [booking, setBooking] = useState<IBooking | null>(null);
@@ -99,7 +190,11 @@ socket.on("driver-Location",({latitude,longitude})=>{
       </div>
     );
   }
-
+if(status==="completed" && booking){
+  return (
+    <CompletedScreen booking={booking} role="user" />
+  )
+}
   const cfg =
     STATUS_LABEL[
       booking?.bookingStatus ?? "confirmed"

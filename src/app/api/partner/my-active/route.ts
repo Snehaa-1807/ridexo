@@ -28,7 +28,7 @@ const user = await User.findOne({
 const booking = await Booking.findOne({
   driver: user._id,
   bookingStatus: {
-    $in: ["confirmed", "started", "completed"]
+    $in: ["confirmed", "started"]
   }
 }).populate("user vehicle driver")
   return NextResponse.json(

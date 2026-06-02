@@ -183,95 +183,78 @@ function LiveRideMap({
     const [routeToDrop, setRouteToDrop] = useState<[number, number][]>([])
   
   useEffect(() => {
+    if (!driverLocation || !pickUpLocation || !dropLocation) return;
 
-  if (!driverLocation || !pickUpLocation || !dropLocation) return;
+    const [pLat, pLon] = pickUpLocation as [number, number];
+    const [dLat, dLon] = dropLocation as [number, number];
+    const [drLat, drLon] = driverLocation as [number, number];
 
-  const [pLat, pLon] = pickUpLocation as [number, number]
-  const [dLat, dLon] = dropLocation as [number, number]
-  const [drLat, drLon] = driverLocation as [number, number]
+    const getRoute = async (
+      startLat: number,
+      startLon: number,
+      endLat: number,
+      endLon: number
+    ) => {
+      const res = await axios.get(
+        `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`
+      );
+      return res.data.routes?.[0];
+    };
 
-  const getRoute = async (
-  startLat: number,
-  startLon: number,
-  endLat: number,
-  endLon: number
-) => {
+    const fetchRoutes = async () => {
+      try {
+        if (mapStatus === "arriving") {
+          const pickUpRoute = await getRoute(drLat, drLon, pLat, pLon);
+          const dropRoute = await getRoute(drLat, drLon, dLat, dLon);
 
-  const res = await axios.get(
-    `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`
-  )
+          if (pickUpRoute) {
+            setRouteToPickUp(
+              pickUpRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
+            );
+          }
 
-  return res.data.routes?.[0]
+          if (dropRoute) {
+            setRouteToDrop(
+              dropRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
+            );
+          }
 
-}
-const fetchRoutes = async () => {
+          onStats?.({
+            distanceToPickup: (pickUpRoute?.distance ?? 0) / 1000,
+            etaToPickup: (pickUpRoute?.duration ?? 0) / 60,
+            distanceToDrop: (dropRoute?.distance ?? 0) / 1000,
+            etaToDrop: (dropRoute?.duration ?? 0) / 60,
+          });
+        } else {
+          setRouteToPickUp([]);
+          const dropRoute = await getRoute(drLat, drLon, dLat, dLon);
 
-  try {
+          if (dropRoute) {
+            setRouteToDrop(
+              dropRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
+            );
+          }
 
-    if (mapStatus === "arriving") {
+          onStats?.({
+            distanceToPickup: 0,
+            etaToPickup: 0,
+            distanceToDrop: (dropRoute?.distance ?? 0) / 1000,
+            etaToDrop: (dropRoute?.duration ?? 0) / 60,
+          });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-      const pickUpRoute = await getRoute(
-        drLat,
-        drLon,
-        pLat,
-        pLon
-      )
-const dropRoute = await getRoute(
-        drLat,
-        drLon,
-        dLat,
-        dLon
-      )
-     if(pickUpRoute){
-         setRouteToPickUp(
-        pickUpRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
-      )
-      
-     }
-     if(dropRoute){
-        setRouteToDrop(
-        dropRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
-      )
-     }
-onStats?.({
-  distanceToPickup:(pickUpRoute?.distance??0)/1000,
-etaToPickup:(pickUpRoute?.duration??0)/60,
-distanceToDrop:(dropRoute?.distance??0)/1000,
-etaToDrop:(dropRoute?.duration??0)/60
-})
-
-    }
-else{
-    setRouteToPickUp([])
-    const dropRoute = await getRoute(
-        drLat,
-        drLon,
-        dLat,
-        dLon
-      )
-     if(dropRoute){
-        setRouteToDrop(
-        dropRoute.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng])
-      )
-     }
-     onStats?.({
-  distanceToPickup:0,
-etaToPickup:0,
-distanceToDrop:(dropRoute?.distance??0)/1000,
-etaToDrop:(dropRoute?.duration??0)/60
-})
-}
- } catch (error) {
-  console.log(error)
-}
-fetchRoutes()
-}, [
-  driverLocation,
-  pickUpLocation,
-  dropLocation,
-  mapStatus,
-  onStats
-])
+    fetchRoutes();
+  }, [
+    driverLocation,
+    pickUpLocation,
+    dropLocation,
+    mapStatus,
+    onStats,
+  ]);
 const showPickMarker=mapStatus==="arriving" 
 const showPickUpRoute=mapStatus==="arriving"  && routeToPickUp.length>0
 const showDropRoute=mapStatus!=="completed"

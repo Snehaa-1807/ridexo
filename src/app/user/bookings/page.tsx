@@ -1,9 +1,9 @@
 'use client'
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
-import { BookingStatus, PaymentStatus } from '../models/booking.model'
-import { IUser } from '../models/user.model'
-import { IVehicle } from '../models/vehicle.model'
+import { BookingStatus, PaymentStatus } from '@/app/models/booking.model'
+import { IUser } from '@/app/models/user.model'
+import { IVehicle } from '@/app/models/vehicle.model'
 import { Bike, Calendar, Car, ChevronRightIcon, IndianRupee, Loader2, MapPin, Phone, Truck, User } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
@@ -243,7 +243,8 @@ function Page() {
                           {b.paymentStatus}
                         </span>
                       </div>
-                      {b.bookingStatus !== "completed" && (
+                      {(b.bookingStatus == "confirmed" || b.bookingStatus == "started" || b.bookingStatus == "completed") && (
+                      <div className='flex items-center gap-2'>
                         <button
                           onClick={() => router.push(`/user/ride/${b._id}`)}
                           className='flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-1.5 rounded-lg transition-colors'
@@ -251,6 +252,7 @@ function Page() {
                           <span>Details</span>
                           <ChevronRightIcon className='w-4 h-4' />
                         </button>
+                      </div>
                       )}
                     </div>
 

@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import ContentList from './ContentList'
 import Image from 'next/image'
 import axios from 'axios'
+import AdminEarning from './AdminEarning'
 
 type Stats = {
   totalApprovedPartners: number;
@@ -116,6 +117,8 @@ const AdminDashboard = ({
             {activeTab === "vehicle" && <ContentList data={pendingVehicleReviews} type="vehicle" />}
           </motion.div>
         </AnimatePresence>
+              <AdminEarning/>
+
       </main>
     </div>
   )

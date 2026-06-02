@@ -1,8 +1,7 @@
 import connectDb from "@/app/lib/db";
 import { sendMail } from "@/app/lib/sendMail";
 import Booking from "@/app/models/booking.model";
-import { NextRequest } from "next/dist/server/web/spec-extension/request";
-import { NextResponse } from "next/dist/server/web/spec-extension/response";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {

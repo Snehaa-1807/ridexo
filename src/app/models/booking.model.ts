@@ -1,23 +1,22 @@
 import mongoose from "mongoose";
-import { number } from "motion";
-export type BookingStatus= "idle"
-|"requested"
-| "awaited_payment"
-|"confirmed"
-|"started"
-|"completed"
-|"cancelled"
-|"rejected"
-|"expired"
+export type BookingStatus =
+  | "idle"
+  | "requested"
+  | "awaiting_payment"
+  | "confirmed"
+  | "started"
+  | "completed"
+  | "cancelled"
+  | "rejected"
+  | "expired"
 
-
-export type PaymentStatus="pending" | "paid" | "cash" | "falied"
+export type PaymentStatus = "pending" | "paid" | "cash" | "failed"
 export interface IBooking {
-    user:mongoose.Types.ObjectId
-
-    driver:mongoose.Types.ObjectId
-    vehicle:mongoose.Types.ObjectId
-pickUpAddress:string
+  _id?: mongoose.Types.ObjectId
+  user: mongoose.Types.ObjectId
+  driver: mongoose.Types.ObjectId
+  vehicle: mongoose.Types.ObjectId
+  pickUpAddress: string
 dropAddress:string
 pickUpLocation:{
     type:"Point",
@@ -43,14 +42,11 @@ dropOtpExpires:Date
 createdAt?:Date
 updatedAt?:Date
 }
-const bookingSchema=new mongoose.Schema<IBooking>({
-   _id?:mongoose.Schema.Types.ObjectId,
-    user:mongoose.Schema.Types.ObjectId,
-    driver:mongoose.Schema.Types.ObjectId,
-    
-    vehicle:mongoose.Schema.Types.ObjectId,
-      
-    pickUpAddress:String,
+const bookingSchema = new mongoose.Schema<IBooking>({
+    user: mongoose.Schema.Types.ObjectId,
+    driver: mongoose.Schema.Types.ObjectId,
+    vehicle: mongoose.Schema.Types.ObjectId,
+    pickUpAddress: String,
     dropAddress:String,
     pickUpLocation:{
         type:{

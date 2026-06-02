@@ -23,6 +23,8 @@ function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const { data: session } = useSession();
+  const sessionUser = session?.user as { name?: string; role?: string } | undefined;
+  const userRole = sessionUser?.role;
   const userData = useSelector((state: RootState) => state.user.userData);
 
   const handleLogout = async () => {
@@ -30,35 +32,33 @@ function Nav() {
     setProfileOpen(false);
   };
 
-  const fetchCount = async () => {
-    try {
-      const { data } = await axios.get("/api/partner/bookings/pending-requests-count");
-      setPendingCount(data ?? 0);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   useEffect(() => {
     if (userData?.role === "partner") {
-      fetchCount();
+      const loadCount = async () => {
+        try {
+          const { data } = await axios.get("/api/partner/bookings/pending-requests-count");
+          setPendingCount(data ?? 0);
+        } catch (error) {
+          console.log(error);
+        }
+      };
+
+      void loadCount();
     }
   }, [userData?.role]);
-useEffect(() => {
 
-  const socket = getSocket()
+  useEffect(() => {
+    const socket = getSocket();
 
-  socket.on("new-booking", (data) => {
- setPendingCount((prev) => prev + 1)
-  })
+    socket.on("new-booking", () => {
+      setPendingCount((prev) => prev + 1);
+    });
 
-  return () => {
-    socket.off("new-booking")
-  }
+    return () => {
+      socket.off("new-booking");
+    };
+  }, []);
 
-}, [])
-
-return
   return (
     <>
       <motion.div className="fixed top-3 left-1/2 -translate-x-1/2 w-[94%] md:w-[86%] z-50 rounded-full bg-[#0B0B0B] text-white py-4">
@@ -75,9 +75,7 @@ return
                   className="relative text-sm font-medium text-gray-300 hover:text-white transition"
                   href="/partner/pending-requests"
                 >
-                  Pending Requests
-
-                  <span className="absolute -top-2 -right-5 w-6 h-6 bg-white text-black text-xs rounded-full flex items-center justify-center font-bold">
+                  Pending Requests <span className="absolute -top-2 -right-5 w-6 h-6 bg-white text-black text-xs rounded-full flex items-center justify-center font-bold">
                     {pendingCount}
                   </span>
                 </Link>
@@ -97,7 +95,7 @@ return
                 </Link>
               </>
             ) : (
-              Nav_Items.map((i, index) => {
+              Nav_Items.map((i) => {
                 let href;
 
                 if (i === "Home") {
@@ -123,20 +121,14 @@ return
 
           <div className="flex items-center gap-3">
             <div className="hidden md:block">
-              {!session?.user ? (
-                <button
-                  onClick={() => setAuthOpen(true)}
-                  className="bg-white text-black px-4 py-1 rounded-full"
-                >
-                  Login
-                </button>
-              ) : (
+              {sessionUser ? (
                 <div className="relative">
                   <button
                     onClick={() => setProfileOpen((p) => !p)}
                     className="w-10 h-10 bg-white text-black rounded-full"
+                    type="button"
                   >
-                    {session.user.name?.charAt(0).toUpperCase()}
+                    {sessionUser?.name?.charAt(0).toUpperCase()}
                   </button>
 
                   <AnimatePresence>
@@ -144,16 +136,17 @@ return
                       <motion.div className="absolute top-12 right-0 bg-white text-black p-4 rounded-xl w-64">
 
                         <p className="font-semibold">
-                          {session.user.name}
+                          {sessionUser?.name}
                         </p>
 
                         <p className="text-xs mb-3">
-                          {(session.user as { role?: string })?.role}
+                          {userRole}
                         </p>
 
-                        {(session.user as { role?: string })?.role !== "partner" && (
-                          <div
-                            className="w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl cursor-pointer"
+                        {userRole !== "partner" && (
+                          <button
+                            type="button"
+                            className="w-full text-left flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl"
                             onClick={() => router.push("/partner/status")}
                           >
                             <div className="flex -space-x-2">
@@ -173,7 +166,7 @@ return
                             Become Partner
 
                             <ChevronRight size={16} className="ml-auto" />
-                          </div>
+                          </button>
                         )}
 
                         <button
@@ -188,6 +181,14 @@ return
                     )}
                   </AnimatePresence>
                 </div>
+              ) : (
+                <button
+                  onClick={() => setAuthOpen(true)}
+                  className="bg-white text-black px-4 py-1 rounded-full"
+                  type="button"
+                >
+                  Login
+                </button>
               )}
             </div>
 
@@ -204,7 +205,7 @@ return
           {mobileOpen && (
             <motion.div className="md:hidden px-4 mt-4 flex flex-col gap-4">
 
-              {Nav_Items.map((i, index) => {
+              {Nav_Items.map((i) => {
                 let href;
 
                 if (i === "Home") {
@@ -225,21 +226,12 @@ return
                 );
               })}
 
-              {!session?.user ? (
-                <button
-                  onClick={() => {
-                    setAuthOpen(true);
-                    setMobileOpen(false);
-                  }}
-                  className="bg-white text-black px-4 py-2 rounded-full"
-                >
-                  Login
-                </button>
-              ) : (
+              {sessionUser ? (
                 <>
-                  {(session.user as { role?: string })?.role !== "partner" && (
-                    <div
-                      className="flex items-center gap-2 mt-2 cursor-pointer"
+                  {userRole !== "partner" && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 mt-2"
                       onClick={() => {
                         router.push("/partner/status");
                         setMobileOpen(false);
@@ -252,17 +244,57 @@ return
                       <span>Become Partner</span>
 
                       <ChevronRight size={14} className="ml-auto" />
-                    </div>
+                    </button>
                   )}
+                  {userRole === "partner" && (
+  <div className="flex flex-col gap-4">
+  <Link
+    className="relative text-sm font-medium text-black hover:text-gray-500 transition flex items-center gap-2"
+    href={"/partner/pending-requests"}
+  >
+    <span>Pending Requests</span>
+
+    <span className="w-6 h-6 bg-black text-white text-xs rounded-full flex items-center justify-center font-bold">
+      {pendingCount ?? 0}
+    </span>
+  </Link>
+
+  <Link
+    className="relative text-sm font-medium text-black hover:text-gray-500 transition"
+    href={"/partner/bookings"}
+  >
+    Bookings
+  </Link>
+
+  <Link
+    className="relative text-sm font-medium text-black hover:text-gray-500 transition"
+    href={"/partner/active-ride"}
+  >
+    Active Ride
+  </Link>
+</div>
+)}
 
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 mt-2"
+                    type="button"
                   >
                     <LogOut size={16} />
                     Logout
                   </button>
                 </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setAuthOpen(true);
+                    setMobileOpen(false);
+                  }}
+                  className="bg-white text-black px-4 py-2 rounded-full"
+                  type="button"
+                >
+                  Login
+                </button>
               )}
             </motion.div>
           )}

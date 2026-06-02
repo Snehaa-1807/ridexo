@@ -6,7 +6,7 @@ const geminiUrl=process.env.GEMINI_API_URL
 export async function POST(req: NextRequest) {
   try {
     await connectDb();
-const {lastMessage, role}=await req.json()
+const { lastMessage = "", role } = await req.json()
 const prompt = `You are an AI reply suggestion system for a vehicle booking chat app.
 
 Generate short, smart, human-like quick reply suggestions based on:

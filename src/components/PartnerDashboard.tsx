@@ -13,6 +13,7 @@ import ActionCard from "./ActionCard";
 import axios from "axios";
 import PricingModal from "./PricingModal";
 import { IVehicle } from "@/app/models/vehicle.model";
+import PartnerEarning from "./PartnerEarning";
 
 type Step = { id: number; title: string; route?: string };
 
@@ -344,6 +345,7 @@ const PartnerDashboard = () => {
             </button>
           </motion.div>
         )}
+        <PartnerEarning />
       </div>
 
       <PricingModal

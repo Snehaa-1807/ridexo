@@ -91,12 +91,12 @@ const res=await fetch(
 
 const data=await res.json()
 
-let results=(data.features||[]).map((f:any)=>({
-id:String(f.properties.place_id||f.properties.osm_id),
-name:f.properties.formatted,
-country:f.properties.country,
-lat:f.geometry.coordinates[1],
-lng:f.geometry.coordinates[0]
+let results: Place[] = (data.features || []).map((f: any) => ({
+    id: String(f.properties.place_id || f.properties.osm_id),
+    name: f.properties.formatted,
+    country: f.properties.country,
+    lat: f.geometry.coordinates[1],
+    lng: f.geometry.coordinates[0],
 }))
 
 if(restrict){

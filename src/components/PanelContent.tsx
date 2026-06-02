@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Bike, Car, Clock, IndianRupee, MessageCircle, Phone, Truck, User } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
 import RideChat from "./RideChat";
-import { RootState } from "@reduxjs/toolkit/query/react";
+import { RootState } from "@/redux/store";
 
 function PanelContent({
   isActive,

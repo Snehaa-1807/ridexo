@@ -16,18 +16,18 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const User = await User.findOne({ email: session.user.email })
+    const foundUser = await User.findOne({ email: session.user.email })
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json(
         { message: "user not found" },
         { status: 400 }
       )
     }
-const count=await Booking.countDocuments({
-user:user._id,
-bookingStatus:"requested"
-})
+    const count = await Booking.countDocuments({
+      user: foundUser._id,
+      bookingStatus: "requested"
+    })
 return NextResponse.json(
        count,
         { status: 200 }

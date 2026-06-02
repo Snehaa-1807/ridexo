@@ -1,11 +1,9 @@
 import connectDb from "@/app/lib/db"
 import Booking from "@/app/models/booking.model"
-import User from "@/app/models/user.model"
 import { auth } from "@/auth"
-import error from "next/dist/api/error"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
-export async function PST(req: NextRequest) {
+export async function POST(req: NextRequest) {
 
   try {
 
