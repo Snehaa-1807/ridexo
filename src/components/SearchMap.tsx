@@ -174,39 +174,46 @@ const [ready,setReady]=useState(false)
 
 
 
-const geoCoding=async(
-q:string
-):Promise<[number,number]|null>=>{
+const geoCoding = async (q: string): Promise<[number, number] | null> => {
+  try {
+    if (!q || q.trim().length === 0) return null
 
-try{
+    // Nominatim first — faster, no API key
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+      {
+        headers: { "Accept-Language": "en", "User-Agent": "ridexo-app" },
+        signal: AbortSignal.timeout(5000),
+      }
+    )
+    const data = await res.json()
 
-if(!q || q.trim().length === 0) return null
+    if (data?.length) {
+      const lat = parseFloat(data[0].lat)
+      const lon = parseFloat(data[0].lon)
+      console.log("coords for", q, [lat, lon])
+      return [lat, lon]
+    }
 
-const res=await fetch(
-`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(q)}&limit=1&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`,
-{ signal: AbortSignal.timeout(5000) }
-)
+    // Fallback to Geoapify
+    const res2 = await fetch(
+      `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(q)}&limit=1&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`,
+      { signal: AbortSignal.timeout(8000) }
+    )
+    const data2 = await res2.json()
 
-const data=await res.json()
+    if (!data2.features?.length) {
+      console.warn("No coordinates found for:", q)
+      return null
+    }
 
-if(!data.features?.length){
-console.warn(`No coordinates found for: ${q}`)
-return null
-}
+    const [lon2, lat2] = data2.features[0].geometry.coordinates
+    return [lat2, lon2]
 
-const [lon,lat]=
-data.features[0].geometry.coordinates
-
-return [lat,lon]
-
-}catch(e){
-console.error(
-'geocode error',
-e
-)
-return null
-}
-
+  } catch (e) {
+    console.error("geocode error", e)
+    return null
+  }
 }
 
 

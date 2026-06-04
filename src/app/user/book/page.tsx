@@ -73,44 +73,45 @@ mobile.length===10,
 ].filter(Boolean).length
 
 
-const searchAddress=async(
-query:string,
-setResults:(r:Place[])=>void,
-restrict?:string
-)=>{
-try{
+const searchAddress = async (
+  query: string,
+  setResults: (r: Place[]) => void,
+  restrict?: string
+) => {
+  try {
+    if (query.trim().length < 2) {
+      setResults([])
+      return
+    }
 
-if(query.trim().length<2){
-setResults([])
-return
-}
+    // Nominatim — faster, no API key
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&addressdetails=1`,
+      {
+        headers: { "Accept-Language": "en", "User-Agent": "ridexo-app" },
+        signal: AbortSignal.timeout(5000),
+      }
+    )
+    const data = await res.json()
 
-const res=await fetch(
-`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&limit=6&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`
-)
+    let results: Place[] = data.map((item: any) => ({
+      id:      String(item.place_id),
+      name:    item.display_name,
+      country: item.address?.country,
+      lat:     parseFloat(item.lat),
+      lng:     parseFloat(item.lon),
+    }))
 
-const data=await res.json()
+    if (restrict) {
+      results = results.filter(r => r.country === restrict)
+    }
 
-let results: Place[] = (data.features || []).map((f: any) => ({
-    id: String(f.properties.place_id || f.properties.osm_id),
-    name: f.properties.formatted,
-    country: f.properties.country,
-    lat: f.geometry.coordinates[1],
-    lng: f.geometry.coordinates[0],
-}))
+    setResults(results)
 
-if(restrict){
-results=results.filter(
-r=>r.country===restrict
-)
-}
-
-setResults(results)
-
-}catch(err){
-console.log(err)
-setResults([])
-}
+  } catch (err) {
+    console.log(err)
+    setResults([])
+  }
 }
 
 

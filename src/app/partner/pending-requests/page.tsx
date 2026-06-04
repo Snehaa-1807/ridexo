@@ -70,37 +70,18 @@ const [actionLoading,setActionLoading]=useState<string | null>(null)
 const router = useRouter()
 
 
-const fetchPendingRequests=async()=>{
-
-try{
-
-setLoading(true)
-
-const {data}=await axios.get(
-'/api/partner/bookings/pending'
-)
-
-console.log('API Response:',data)
-
-if(Array.isArray(data)){
-setBookings(data)
-}
-else if(Array.isArray(data.bookings)){
-setBookings(data.bookings)
-}
-else{
-setBookings([])
-}
-
-}
-catch(error){
-console.log(error)
-setBookings([])
-}
-finally{
-setLoading(false)
-}
-
+const fetchPendingRequests = async () => {
+  try {
+    setLoading(true)
+    const { data } = await axios.get('/api/partner/bookings/pending')
+    // now always an array
+    setBookings(Array.isArray(data) ? data : [])
+  } catch (error) {
+    console.log(error)
+    setBookings([])
+  } finally {
+    setLoading(false)
+  }
 }
 
 
@@ -126,44 +107,44 @@ setActionLoading(null)
 
 
 
-const handleReject=async(id:string)=>{
-try{
-window.location.reload()
-setActionLoading(id)
-
-await axios.post(
-`/api/partner/bookings/${id}/reject`
-)
-
-await fetchPendingRequests()
-
-}catch(error){
-console.log(error)
-}
-finally{
-setActionLoading(null)
-}
+const handleReject = async (id: string) => {
+  try {
+    setActionLoading(id)
+    await axios.post(`/api/partner/bookings/${id}/reject`)
+    await fetchPendingRequests()  // refresh after reject
+  } catch (error) {
+    console.log(error)
+  } finally {
+    setActionLoading(null)
+  }
 }
 
 
 
-useEffect(()=>{
-fetchPendingRequests()
-},[])
 useEffect(() => {
+  fetchPendingRequests()
 
+  // Poll every 5 seconds as fallback
+  const interval = setInterval(fetchPendingRequests, 5000)
+  return () => clearInterval(interval)
+}, [])
+useEffect(() => {
   const socket = getSocket()
-console.log(socket)
+
   socket.on("new-booking", (data) => {
-setBookings((prev) => [...prev, data])  
-})
+    // data is the raw booking object from server
+    setBookings((prev) => {
+      // avoid duplicates
+      const exists = prev.find(b => b._id === data._id)
+      if (exists) return prev
+      return [data, ...prev]
+    })
+  })
 
   return () => {
     socket.off("new-booking")
   }
-
 }, [])
-
 
 
 return(
