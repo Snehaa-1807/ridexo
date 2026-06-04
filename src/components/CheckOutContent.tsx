@@ -58,21 +58,23 @@ Number(params.get("droplon"))
   const handleRequestBooking = async () => {
     setLoading(true)
     try {
-      await axios.post("/api/booking/create", {
+      const { data } = await axios.post("/api/booking/create", {
         driverId,
         vehicleId,
         pickUpAddress: pickUp,
         dropAddress: drop,
         pickUpLocation: { type: "Point", coordinates: [pickUpLon, pickUpLat] },
         dropLocation: { type: "Point", coordinates: [dropLon, dropLat] },
-        fare,
+        fare: Number(fare) || 0,
         mobileNumber: mobile,
       })
+      setBooking(data)
       setLoading(false)
       setStatus("requested")
     } catch (error) {
       setLoading(false)
-      console.log(error)
+      console.error("Booking creation error:", error)
+      alert("Failed to create booking. Please try again.")
     }
   }
   useEffect(() => {
@@ -81,9 +83,7 @@ Number(params.get("droplon"))
 
   socket.on("accept-booking", (data) => {
     setStatus(data)
-  })
- socket.on("accept-booking", (data) => {
-    setStatus(data)
+    fetchActiveBooking()
   })
   socket.on("reject-booking", (data) => {
     setStatus(data)
@@ -170,7 +170,7 @@ paymentObject.open()
 if (data.success){
   setStatus("confirmed")
   if (booking?._id) {
-    window.location.href = `/ride/${booking._id}`
+    window.location.href = `/user/ride/${booking._id}`
   }
 }
     } 
@@ -512,7 +512,7 @@ className="absolute inset-0 rounded-full border-2 border-zinc-900"
     whileHover={{ scale: 1.03 }}
     onClick={() => {
       if (booking?._id) {
-        window.location.href = `/ride/${booking._id}`
+        window.location.href = `/user/ride/${booking._id}`
       }
     }}
     className="flex items-center gap-2.5 bg-zinc-900 hover:bg-black text-white font-black text-sm px-8 py-4 rounded-2xl transition-colors shadow-md"

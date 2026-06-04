@@ -459,10 +459,15 @@ className='px-4 py-3 flex items-center gap-3 hover:bg-zinc-50 cursor-pointer'
 <button
 disabled={!canContinue}
 onClick={()=>{
-router.push(
-  `/user/search?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobile=${encodeURIComponent(mobile)}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}&droplon=${dropLon}`
-)}}
-className='w-full h-14 rounded-2xl bg-black text-white font-bold disabled:opacity-40'
+  if (!pickUpLat || !pickUpLon || !dropLat || !dropLon) {
+    alert('Please select valid pickup and drop locations with coordinates');
+    return;
+  }
+  router.push(
+    `/user/search?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobile=${encodeURIComponent(mobile)}&pickuplat=${parseFloat(String(pickUpLat))}&pickuplon=${parseFloat(String(pickUpLon))}&droplat=${parseFloat(String(dropLat))}&droplon=${parseFloat(String(dropLon))}`
+  )
+}}
+className='w-full h-14 rounded-2xl bg-black text-white font-bold disabled:opacity-40 hover:bg-zinc-900 transition'
 >
 Continue
 </button>

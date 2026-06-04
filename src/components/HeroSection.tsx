@@ -20,11 +20,16 @@ function HeroSection({ onAuthRequired }: { onAuthRequired: () => void }) {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-hidden bg-cover bg-center"
-      style={{ backgroundImage: "url('/heroImage.jpg')" }}
+      className="relative min-h-screen w-full overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{ 
+        backgroundImage: "url('/heroImage.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/80" />
+      <div className="absolute inset-0 bg-black/70" />
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 text-center">
 

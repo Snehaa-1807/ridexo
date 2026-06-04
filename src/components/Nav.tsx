@@ -61,10 +61,10 @@ function Nav() {
 
   return (
     <>
-      <motion.div className="fixed top-3 left-1/2 -translate-x-1/2 w-[94%] md:w-[86%] z-50 rounded-full bg-[#0B0B0B] text-white py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-4">
+      <motion.div className="fixed top-3 left-1/2 -translate-x-1/2 w-[94%] md:w-[86%] z-50 rounded-full bg-[#0B0B0B] text-white py-3 md:py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-3 md:px-4">
 
-          <Image src="/logo.png" alt="logo" width={44} height={44} />
+          <Image src="/logo.png" alt="logo" width={40} height={40} className="w-8 h-8 md:w-11 md:h-11" />
 
           <div className="hidden md:flex gap-8">
             {userData?.role === "partner" ? (
@@ -203,85 +203,109 @@ function Nav() {
 
         <AnimatePresence>
           {mobileOpen && (
-            <motion.div className="md:hidden px-4 mt-4 flex flex-col gap-4">
+            <motion.div 
+              className="md:hidden px-3 md:px-4 mt-4 flex flex-col gap-3 pb-2"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
 
-              {Nav_Items.map((i) => {
-                let href;
-
-                if (i === "Home") {
-                  href = "/";
-                } else {
-                  href = `/user/${i.toLowerCase()}`;
-                }
-
-                return (
+              {userData?.role === "partner" ? (
+                <>
                   <Link
-                    key={i}
-                    href={href}
+                    className="text-sm font-medium text-gray-300 hover:text-white transition py-2"
+                    href="/"
                     onClick={() => setMobileOpen(false)}
-                    className="text-gray-300"
                   >
-                    {i}
+                    Home
                   </Link>
-                );
-              })}
+
+                  <Link
+                    className="text-sm font-medium text-gray-300 hover:text-white transition py-2 flex items-center gap-2"
+                    href="/partner/pending-requests"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <span>Pending Requests</span>
+                    <span className="w-5 h-5 bg-white text-black text-xs rounded-full flex items-center justify-center font-bold">
+                      {pendingCount}
+                    </span>
+                  </Link>
+
+                  <Link
+                    className="text-sm font-medium text-gray-300 hover:text-white transition py-2"
+                    href="/partner/bookings"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Bookings
+                  </Link>
+
+                  <Link
+                    className="text-sm font-medium text-gray-300 hover:text-white transition py-2"
+                    href="/partner/active-ride"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Active Ride
+                  </Link>
+                </>
+              ) : (
+                Nav_Items.map((i) => {
+                  let href;
+
+                  if (i === "Home") {
+                    href = "/";
+                  } else {
+                    href = `/user/${i.toLowerCase()}`;
+                  }
+
+                  return (
+                    <Link
+                      key={i}
+                      href={href}
+                      onClick={() => setMobileOpen(false)}
+                      className="text-sm font-medium text-gray-300 hover:text-white transition py-2"
+                    >
+                      {i}
+                    </Link>
+                  );
+                })
+              )}
 
               {sessionUser ? (
                 <>
                   {userRole !== "partner" && (
                     <button
                       type="button"
-                      className="flex items-center gap-2 mt-2"
+                      className="flex items-center gap-2 mt-2 py-2 text-sm font-medium text-gray-300 hover:text-white transition"
                       onClick={() => {
                         router.push("/partner/status");
                         setMobileOpen(false);
                       }}
                     >
-                      <Bike size={14} />
-                      <Car size={14} />
-                      <Truck size={14} />
-
+                      <div className="flex -space-x-1">
+                        <Bike size={14} />
+                        <Car size={14} />
+                        <Truck size={14} />
+                      </div>
                       <span>Become Partner</span>
-
                       <ChevronRight size={14} className="ml-auto" />
                     </button>
                   )}
-                  {userRole === "partner" && (
-  <div className="flex flex-col gap-4">
-  <Link
-    className="relative text-sm font-medium text-black hover:text-gray-500 transition flex items-center gap-2"
-    href={"/partner/pending-requests"}
-  >
-    <span>Pending Requests</span>
 
-    <span className="w-6 h-6 bg-black text-white text-xs rounded-full flex items-center justify-center font-bold">
-      {pendingCount ?? 0}
-    </span>
-  </Link>
-
-  <Link
-    className="relative text-sm font-medium text-black hover:text-gray-500 transition"
-    href={"/partner/bookings"}
-  >
-    Bookings
-  </Link>
-
-  <Link
-    className="relative text-sm font-medium text-black hover:text-gray-500 transition"
-    href={"/partner/active-ride"}
-  >
-    Active Ride
-  </Link>
-</div>
-)}
+                  <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-700">
+                    <div className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center text-xs font-bold">
+                      {sessionUser?.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs text-gray-400 flex-1 truncate">{sessionUser?.name}</span>
+                  </div>
 
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 mt-2"
+                    className="flex items-center gap-2 mt-2 py-2 text-sm font-medium text-gray-300 hover:text-white transition w-full"
                     type="button"
                   >
                     <LogOut size={16} />
-                    Logout
+                    <span>Logout</span>
                   </button>
                 </>
               ) : (
@@ -290,7 +314,7 @@ function Nav() {
                     setAuthOpen(true);
                     setMobileOpen(false);
                   }}
-                  className="bg-white text-black px-4 py-2 rounded-full"
+                  className="bg-white text-black px-4 py-2 rounded-full mt-2 font-medium text-sm w-full"
                   type="button"
                 >
                   Login

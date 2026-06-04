@@ -180,13 +180,17 @@ q:string
 
 try{
 
+if(!q || q.trim().length === 0) return null
+
 const res=await fetch(
-`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(q)}&limit=1&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`
+`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(q)}&limit=1&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`,
+{ signal: AbortSignal.timeout(5000) }
 )
 
 const data=await res.json()
 
 if(!data.features?.length){
+console.warn(`No coordinates found for: ${q}`)
 return null
 }
 
@@ -196,7 +200,7 @@ data.features[0].geometry.coordinates
 return [lat,lon]
 
 }catch(e){
-console.log(
+console.error(
 'geocode error',
 e
 )
@@ -214,8 +218,11 @@ lon:number
 
 try{
 
+if(isNaN(lat) || isNaN(lon)) return null
+
 const res=await fetch(
-`https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lon}&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`
+`https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lon}&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`,
+{ signal: AbortSignal.timeout(5000) }
 )
 
 const data=await res.json()
@@ -227,7 +234,7 @@ return null
 return data.features[0].properties.formatted
 
 }catch(e){
-console.log(e)
+console.error('reverse geocode error:', e)
 return null
 }
 
@@ -242,15 +249,20 @@ b:[number,number]
 
 try{
 
+if(isNaN(a[0]) || isNaN(a[1]) || isNaN(b[0]) || isNaN(b[1])) {
+setReady(true)
+return
+}
+
 const res=await fetch(
-`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson`
+`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson`,
+{ signal: AbortSignal.timeout(8000) }
 )
 
 const data=await res.json()
 
-console.log("route",data)
-
 if(!data.routes?.length){
+console.warn('No route found')
 setReady(true)
 return
 }
@@ -275,7 +287,7 @@ onDistance(distance)
 setReady(true)
 
 }catch(e){
-console.log(
+console.error(
 'route error',
 e
 )
@@ -407,13 +419,24 @@ drop
 
 
 return(
-<div className='relative h-full w-full'>
+<div className='relative h-full w-full flex items-center justify-center bg-gradient-to-b from-blue-50 to-blue-100'>
+
+{!p1 && !p2 && (
+  <div className='absolute inset-0 flex items-center justify-center z-40 pointer-events-none'>
+    <div className='text-center'>
+      <MapPin className='mx-auto mb-3 text-zinc-400' size={40} />
+      <p className='text-sm text-zinc-500 font-medium'>
+        Enter pickup and drop location to see route
+      </p>
+    </div>
+  </div>
+)}
 
 <MapContainer
 center={
 p1 || [23.2599,77.4126]
 }
-zoom={13}
+zoom={p1 && p2 ? 13 : 11}
 style={{
 height:'100%',
 width:'100%'

@@ -109,13 +109,24 @@ export default function SearchPage() {
     <div className="min-h-screen bg-[#f5f5f7] flex flex-col">
 
       {/* ── FULL WIDTH MAP ── */}
-      <div className="w-full h-[52vh] relative bg-zinc-200">
-        <SearchMap
-          pickUp={pickUp}
-          drop={drop}
-          onChange={(p, d) => { setPickUp(p); setDrop(d) }}
-          onDistance={(d) => setDistance(d)}
-        />
+      <div className="w-full h-[55vh] min-h-[400px] relative bg-zinc-200 border-b border-zinc-300">
+        {pickUp && drop ? (
+          <SearchMap
+            pickUp={pickUp}
+            drop={drop}
+            onChange={(p, d) => { setPickUp(p); setDrop(d) }}
+            onDistance={(d) => setDistance(d)}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-blue-50 to-blue-100">
+            <div className="text-center">
+              <MapPin size={40} className="mx-auto mb-3 text-zinc-400" />
+              <p className="text-sm text-zinc-500 font-medium">
+                Enter pickup and drop location to view route
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── BOTTOM PANEL ── */}

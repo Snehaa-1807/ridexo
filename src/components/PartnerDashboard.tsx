@@ -338,7 +338,7 @@ const PartnerDashboard = () => {
               </div>
             </div>
             <button
-              onClick={() => router.push("/bookings")}
+              onClick={() => router.push("/partner/bookings")}
               className="mt-4 bg-white text-black px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-100 transition"
             >
               Go to Bookings <ArrowRight size={16} />

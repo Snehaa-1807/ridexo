@@ -9,18 +9,32 @@ export async function POST(req: NextRequest) {
 
         const { bookingId } = await req.json()
 
+        if (!bookingId) {
+            return NextResponse.json(
+                { message: "bookingId is required" },
+                { status: 400 }
+            )
+        }
+
         const booking = await Booking.findById(bookingId)
 
         if (!booking) {
             return NextResponse.json(
-                { message: "booking is not found." },
-           {status: 400}
+                { message: "Booking not found" },
+                { status: 404 }
+            )
+        }
+
+        if (!booking.fare) {
+            return NextResponse.json(
+                { message: "Booking fare is not set" },
+                { status: 400 }
             )
         }
 
         const razorpay = getRazorpayClient();
         const order = await razorpay.orders.create({
-            amount: booking.fare * 100, // Razorpay expects amount in paise
+            amount: Math.round(booking.fare * 100), // Razorpay expects amount in paise
             currency: "INR",
             receipt: booking._id.toString(),
         });
@@ -32,11 +46,12 @@ export async function POST(req: NextRequest) {
             orderId: order.id,
             amount: order.amount,
         },
-        {status: 200}
+        { status: 200 }
         )
-    } catch (error) {
+    } catch (error: any) {
+        console.error("Payment create error:", error?.message || error)
         return NextResponse.json(
-            { message: `payment create error ${error}` },
+            { message: `Payment create error: ${error?.message || error}` },
             { status: 500 }
         )
     }
