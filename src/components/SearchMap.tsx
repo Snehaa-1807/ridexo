@@ -173,43 +173,20 @@ const [km,setKm]=useState<number|null>(null)
 const [ready,setReady]=useState(false)
 
 
-
 const geoCoding = async (q: string): Promise<[number, number] | null> => {
   try {
     if (!q || q.trim().length === 0) return null
 
-    // Nominatim first — faster, no API key
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
-      {
-        headers: { "Accept-Language": "en", "User-Agent": "ridexo-app" },
-        signal: AbortSignal.timeout(5000),
-      }
-    )
+    // Use our proxy API — no CORS issues
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
     const data = await res.json()
 
     if (data?.length) {
-      const lat = parseFloat(data[0].lat)
-      const lon = parseFloat(data[0].lon)
-      console.log("coords for", q, [lat, lon])
-      return [lat, lon]
+      console.log("coords for", q, [data[0].lat, data[0].lng])
+      return [data[0].lat, data[0].lng]
     }
 
-    // Fallback to Geoapify
-    const res2 = await fetch(
-      `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(q)}&limit=1&apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY}`,
-      { signal: AbortSignal.timeout(8000) }
-    )
-    const data2 = await res2.json()
-
-    if (!data2.features?.length) {
-      console.warn("No coordinates found for:", q)
-      return null
-    }
-
-    const [lon2, lat2] = data2.features[0].geometry.coordinates
-    return [lat2, lon2]
-
+    return null
   } catch (e) {
     console.error("geocode error", e)
     return null

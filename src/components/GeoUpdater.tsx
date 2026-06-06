@@ -9,23 +9,35 @@ function GeoUpdater({ userId }: { userId: string }) {
 
   useEffect(() => {
     if (!userId) return
-    if (!navigator.geolocation) return
 
     socketRef.current = getSocket()
-    socketRef.current.emit("identity", userId)
+
+    const emitIdentity = () => {
+      socketRef.current?.emit("identity", userId)
+      console.log("✅ identity emitted for:", userId)
+    }
+
+    // If already connected emit immediately, otherwise wait for connect
+    if (socketRef.current.connected) {
+      emitIdentity()
+    }
+
+    // Handles initial connection + reconnects
+    socketRef.current.on("connect", emitIdentity)
+
+    // Location watching
+    if (!navigator.geolocation) return
 
     const watcher = navigator.geolocation.watchPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
 
-        // Update via socket (real-time)
         socketRef.current?.emit("update-location", {
           userId,
           latitude,
           longitude,
         })
 
-        // Also save to DB so $near query works
         try {
           await axios.post("/api/partner/go-online", { latitude, longitude })
         } catch (e) {
@@ -42,8 +54,8 @@ function GeoUpdater({ userId }: { userId: string }) {
     )
 
     return () => {
+      socketRef.current?.off("connect", emitIdentity)
       navigator.geolocation.clearWatch(watcher)
-      socketRef.current?.disconnect()
     }
   }, [userId])
 
