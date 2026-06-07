@@ -7,7 +7,6 @@ import { NextResponse } from "next/server"
 export async function GET() {
   try {
     await connectDb()
-
     const session = await auth()
 
     if (!session?.user?.email) {
@@ -15,10 +14,16 @@ export async function GET() {
     }
 
     const partner = await User.findOne({ email: session.user.email })
-
     if (!partner) {
       return NextResponse.json({ message: "partner not found" }, { status: 404 })
     }
+
+    console.log("Searching bookings for partner._id:", partner._id)
+
+    // Check ALL bookings for this driver regardless of status
+    const allBookings = await Booking.find({ driver: partner._id })
+    console.log("Total bookings for this driver (any status):", allBookings.length)
+    console.log("Statuses:", allBookings.map((b: any) => b.bookingStatus))
 
     const bookings = await Booking.find({
       driver: partner._id,
@@ -28,9 +33,8 @@ export async function GET() {
       .populate("vehicle")
       .sort({ createdAt: -1 })
 
-    console.log("pending requests:", bookings.length)
+    console.log("Pending (requested) bookings:", bookings.length)
 
-    // Return array directly — not wrapped in object
     return NextResponse.json(bookings)
 
   } catch (error) {
