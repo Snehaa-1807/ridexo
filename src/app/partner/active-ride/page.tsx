@@ -204,6 +204,20 @@ setBooking(prev => prev ? { ...prev, bookingStatus: "completed" } : prev);
 
   }
 };
+// Add this useEffect BEFORE the booking fetch useEffect
+useEffect(() => {
+  if (!navigator.geolocation) return
+
+  // Get current position immediately for map center
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      setDriverPos([pos.coords.latitude, pos.coords.longitude])
+    },
+    (err) => console.log("GPS:", err),
+    { enableHighAccuracy: true }
+  )
+}, [])
+
 useEffect(() => {
 
 
