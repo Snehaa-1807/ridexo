@@ -94,14 +94,16 @@ function LiveRideMap({ driverLocation, pickUpLocation, dropLocation, mapStatus, 
   onStatsRef.current = onStats
 
   const getRoute = async (
-    startLat: number, startLon: number,
-    endLat: number,   endLon: number
-  ) => {
-    const res = await axios.get(
-      `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`
-    )
-    return res.data.routes?.[0]
-  }
+  startLat: number, startLon: number,
+  endLat: number,   endLon: number
+) => {
+  // Use fetch instead of axios — axios sends credentials which OSRM blocks
+  const res = await fetch(
+    `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`
+  )
+  const data = await res.json()
+  return data.routes?.[0]
+}
 
   useEffect(() => {
     // Load route even without driver location — use pickUp as start if no driver

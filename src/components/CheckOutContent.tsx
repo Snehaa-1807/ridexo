@@ -77,10 +77,10 @@ Number(params.get("droplon"))
       alert("Failed to create booking. Please try again.")
     }
   }
-  useEffect(() => {
+useEffect(() => {
+  fetchActiveBooking() // ← ADD THIS
 
   const socket = getSocket()
-
   socket.on("accept-booking", (data) => {
     setStatus(data)
     fetchActiveBooking()
@@ -92,7 +92,6 @@ Number(params.get("droplon"))
     socket.off("accept-booking")
     socket.off("reject-booking")
   }
-
 }, [])
 
 
@@ -543,7 +542,7 @@ Driver declined request
 
 <button
 onClick={()=>
-router.push("/user")
+router.push("/")
 }
 className="
 px-6 py-3 rounded-xl

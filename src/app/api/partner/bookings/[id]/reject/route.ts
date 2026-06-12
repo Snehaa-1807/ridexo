@@ -1,62 +1,42 @@
 import connectDb from "@/app/lib/db"
 import Booking from "@/app/models/booking.model"
 import axios from "axios"
-import {NextRequest,NextResponse} from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(
-req:NextRequest,
-context:{params:Promise<{id:string}>}
-){
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    await connectDb()
+    const id = (await context.params).id
 
-try{
+    const booking = await Booking.findById(id)
 
-await connectDb()
+    if (!booking || booking.bookingStatus !== "requested") {
+      return NextResponse.json({ message: "invalid booking" }, { status: 400 })
+    }
 
-const id=(await context.params).id
+    booking.bookingStatus = "rejected"
+    await booking.save()
 
-const booking=
-await Booking.findById(id)
+    const socketUrl = process.env.SOCKET_SERVER_URL || process.env.NEXT_PUBLIC_SOCKET_SERVER_URL
+    if (socketUrl) {
+      try {
+        await axios.post(`${socketUrl}/emit`, {
+          event: "reject-booking",
+          userId: String(booking.user),
+          data: booking.bookingStatus,
+        }, { timeout: 3000 })
+      } catch (e) {
+        console.log("Socket emit failed:", e)
+      }
+    }
 
-if(
-!booking ||
-booking.bookingStatus!=="requested"
-){
-return NextResponse.json(
-{message:"invalid booking"},
-{status:400}
-)
-}
+    return NextResponse.json({ success: true, message: "ride rejected" })
 
-booking.bookingStatus=
-"rejected"
-
-await booking.save()
-await axios.post(
-  `${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL}/emit`,
-  {
-    event: "reject-booking",
-    userId: booking.user,
-    data: booking.bookingStatus
+  } catch (error) {
+    console.log(error)
+    return NextResponse.json({ message: `reject error ${error}` }, { status: 500 })
   }
-)
-return NextResponse.json(
-{
-success:true,
-message:"ride rejected"
-}
-)
-
-}catch(error){
-
-console.log(error)
-
-return NextResponse.json(
-{
-message:`reject error ${error}`
-},
-{status:500}
-)
-
-}
-
 }

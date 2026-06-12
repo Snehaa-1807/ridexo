@@ -1,62 +1,42 @@
 import connectDb from "@/app/lib/db"
 import Booking from "@/app/models/booking.model"
-import {NextRequest,NextResponse} from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import axios from "axios"
 
 export async function POST(
-req:NextRequest,
-context:{params:Promise<{id:string}>}
-){
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    await connectDb()
+    const id = (await context.params).id
 
-try{
+    const booking = await Booking.findById(id)
 
-await connectDb()
+    if (!booking || booking.bookingStatus !== "requested") {
+      return NextResponse.json({ message: "invalid booking" }, { status: 400 })
+    }
 
-const id=(await context.params).id
+    booking.bookingStatus = "awaiting_payment"
+    await booking.save()
 
-const booking=
-await Booking.findById(id)
+    const socketUrl = process.env.SOCKET_SERVER_URL || process.env.NEXT_PUBLIC_SOCKET_SERVER_URL
+    if (socketUrl) {
+      try {
+        await axios.post(`${socketUrl}/emit`, {
+          event: "accept-booking",
+          userId: String(booking.user),
+          data: booking.bookingStatus,
+        }, { timeout: 3000 })
+      } catch (e) {
+        console.log("Socket emit failed:", e)
+      }
+    }
 
-if(
-!booking ||
-booking.bookingStatus!=="requested"
-){
-return NextResponse.json(
-{message:"invalid booking"},
-{status:400}
-)
-}
+    return NextResponse.json({ success: true, message: "ride accepted" })
 
-booking.bookingStatus=
-"awaiting_payment"
-
-await booking.save()
-await axios.post(
-  `${process.env.NEXT_PUBLIC_SOCKET_SERVER_URL}/emit`,
-  {
-    event: "accept-booking",
-    userId: booking.user,
-    data: booking.bookingStatus
+  } catch (error) {
+    console.log(error)
+    return NextResponse.json({ message: `accept error ${error}` }, { status: 500 })
   }
-)
-return NextResponse.json(
-{
-success:true,
-message:"ride accepted"
-}
-)
-
-}catch(error){
-
-console.log(error)
-
-return NextResponse.json(
-{
-message:`accept error ${error}`
-},
-{status:500}
-)
-
-}
-
 }

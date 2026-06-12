@@ -164,46 +164,38 @@ setDropOtpMode(true)
 const handleVerifyPickUpOtp = async () => {
   setLoadingOtp(true)
   try {
-    const { data } = await axios.post(
-      "/api/partner/bookings/otp/pickup/verify",
-      {
-        bookingId: booking?._id, otp
-      }
-    );
-setOtpVerified(true)
-setLoadingOtp(false)
-setOtpMode(false)
-setStatus("completed")
-setBooking(prev => prev ? { ...prev, bookingStatus: "started" } : prev);
-    console.log(data);
-  } catch (error: any) {
-    console.log(error);
+    const { data } = await axios.post("/api/partner/bookings/otp/pickup/verify", {
+      bookingId: booking?._id, otp
+    })
+    setOtpVerified(true)
     setLoadingOtp(false)
-    setOtpError(error.response.data.message ?? "verification failed");
+    setOtpMode(false)
+    setStatus("started")  // ← was "completed", WRONG
+    setBooking(prev => prev ? { ...prev, bookingStatus: "started" } : prev)
+    console.log(data)
+  } catch (error: any) {
+    console.log(error)
+    setLoadingOtp(false)
+    setOtpError(error?.response?.data?.message ?? "verification failed")
   }
-};
+}
 const handleVerifyDropOtp = async () => {
   setLoadingDropOtp(true)
   try {
-    const { data } = await axios.post(
-      "/api/partner/bookings/otp/drop/verify",
-      {
-        bookingId: booking?._id, otp: dropOtp
-      }
-    );
-setLoadingDropOtp(false)
-setDropOtpMode(true)
-setStatus("completed")
-setBooking(prev => prev ? { ...prev, bookingStatus: "completed" } : prev);
-
-    console.log(data);
+    const { data } = await axios.post("/api/partner/bookings/otp/drop/verify", {
+      bookingId: booking?._id, otp: dropOtp
+    })
+    setLoadingDropOtp(false)
+    setDropOtpMode(false)  // ← was true, WRONG
+    setStatus("completed")
+    setBooking(prev => prev ? { ...prev, bookingStatus: "completed" } : prev)
+    console.log(data)
   } catch (error: any) {
-    console.log(error);
-    setLoadingDropOtp(false);
-        setDropOtpError(error.response.data.message ?? "verification failed");
-
+    console.log(error)
+    setLoadingDropOtp(false)
+    setDropOtpError(error?.response?.data?.message ?? "verification failed")
   }
-};
+}
 // Add this useEffect BEFORE the booking fetch useEffect
 useEffect(() => {
   if (!navigator.geolocation) return
@@ -551,17 +543,16 @@ return (
   </p>
 
   <div className="flex justify-center">
-    <input
-      type="text"
-      onChange={(e) => {
-        setOtp(
-          e.target.value.replace(/\D/g, "")
-        );
-        setDropOtpError("");
-      }}
-      placeholder="• • • •"
-      className="w-48 border-2 border-zinc-200 focus:border-zinc-900 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-black outline-none transition-colors"
-    />
+ // CORRECT:
+<input
+  type="text"
+  onChange={(e) => {
+    setDropOtp(e.target.value.replace(/\D/g, ""))  // ← fixed
+    setDropOtpError("")
+  }}
+  placeholder="• • • •"
+  className="w-48 border-2 border-zinc-200 focus:border-zinc-900 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-black outline-none transition-colors"
+/>
   </div>
   {dropOtpError && (
   <motion.p
@@ -789,9 +780,8 @@ return (
     <input
       type="text"
       onChange={(e) => {
-        setOtp(
-          e.target.value.replace(/\D/g, "")
-        );
+            setDropOtp(e.target.value.replace(/\D/g, ""))  // ← fixed
+
         setDropOtpError("");
       }}
       placeholder="• • • •"

@@ -96,14 +96,17 @@ export default function SearchPage() {
     if (pickUpLat && pickUpLon) fetchVehicles(pickUpLat, pickUpLon)
   }, [pickUpLat, pickUpLon])
 
-  const handleBook = (v: IVehicle) => {
-    const fare = v.baseFare && v.pricePerKM && distance
-      ? Math.round(v.baseFare + v.pricePerKM * distance)
-      : 0
-    router.push(
-      `/user/checkout?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&mobile=${mobile}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}&droplon=${dropLon}&fare=${fare}&vehicle=${v.type}&driverId=${v.owner}&vehicleId=${v._id}`
-    )
-  }
+ const handleBook = (v: IVehicle) => {
+  const fare = v.baseFare && v.pricePerKM && distance && distance > 0
+    ? Math.round(v.baseFare + v.pricePerKM * distance)
+    : 0
+
+  console.log("Fare calculation:", { baseFare: v.baseFare, pricePerKM: v.pricePerKM, distance, fare })
+
+  router.push(
+    `/user/checkout?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&mobile=${mobile}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}&droplon=${dropLon}&fare=${fare}&vehicle=${v.type}&driverId=${v.owner}&vehicleId=${v._id}`
+  )
+}
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] flex flex-col">
