@@ -1,7 +1,7 @@
 'use client'
 import { CheckCircle, IndianRupee, User } from 'lucide-react'
 import { motion } from 'motion/react'
-import router from 'next/router';
+import { useRouter } from "next/navigation"
 import React from 'react'
 const PAYMENT_BADGE: Record<any, { label: string; cls: string }> = {
   pending: {
@@ -22,6 +22,8 @@ const PAYMENT_BADGE: Record<any, { label: string; cls: string }> = {
   },
 };
 function CompletedScreen({ booking, role }: { booking: any; role: string }) {
+    const router = useRouter()  // ← add this line if missing
+
   return (
     <motion.div
   initial={{ opacity: 0 }}

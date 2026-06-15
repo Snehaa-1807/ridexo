@@ -42,18 +42,18 @@ export default function Page() {
   const router = useRouter()
   const userData = useSelector((state: RootState) => state.user.userData)
 
-  const fetchPendingRequests = async () => {
-    try {
-      setLoading(true)
-      const { data } = await axios.get('/api/partner/bookings/pending')
-      setBookings(Array.isArray(data) ? data : [])
-    } catch (error) {
-      console.log(error)
-      setBookings([])
-    } finally {
-      setLoading(false)
-    }
+ const fetchPendingRequests = async (isInitial = false) => {
+  try {
+    if (isInitial) setLoading(true)  // ← only show spinner on first load
+    const { data } = await axios.get('/api/partner/bookings/pending')
+    setBookings(Array.isArray(data) ? data : [])
+  } catch (error) {
+    console.log(error)
+    setBookings([])
+  } finally {
+    if (isInitial) setLoading(false)
   }
+}
 
   const handleAccept = async (id: string) => {
     try {
@@ -81,11 +81,13 @@ export default function Page() {
   }
 
   // Polling fallback — every 5 seconds
-  useEffect(() => {
-    fetchPendingRequests()
-    const interval = setInterval(fetchPendingRequests, 5000)
-    return () => clearInterval(interval)
-  }, [])
+useEffect(() => {
+  fetchPendingRequests(true)  // initial load — shows spinner
+
+  // Poll every 5 seconds — no spinner flash
+  const interval = setInterval(() => fetchPendingRequests(false), 5000)
+  return () => clearInterval(interval)
+}, [])
 
   // Emit identity so server knows this partner's socketId
   useEffect(() => {

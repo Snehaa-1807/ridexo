@@ -9,28 +9,29 @@ export async function GET() {
     await connectDb()
     const session = await auth()
 
-    if (!session?.user?.email) {
+    if (!session || !session.user?.email) {
       return NextResponse.json({ message: "unauthorized" }, { status: 401 })
     }
 
-    const partner = await User.findOne({ email: session.user.email })
-    if (!partner) {
-      return NextResponse.json({ message: "partner not found" }, { status: 404 })
+    const foundUser = await User.findOne({ email: session.user.email })
+    if (!foundUser) {
+      return NextResponse.json({ message: "user not found" }, { status: 404 })
     }
 
-    const bookings = await Booking.find({
-      driver: partner._id,
-      bookingStatus: "requested",
-    })
-      .populate("user", "name email mobileNumber")
+    const bookings = await Booking.find({ user: foundUser._id })
+      .populate("driver", "name mobileNumber")
       .populate("vehicle", "vehicleModel number type imageUrl")
       .sort({ createdAt: -1 })
 
-    console.log("pending requests:", bookings.length)
-    return NextResponse.json(bookings)
+    console.log("User bookings found:", bookings.length)
+
+    return NextResponse.json(bookings, { status: 200 })
 
   } catch (error) {
     console.log(error)
-    return NextResponse.json({ message: "error" }, { status: 500 })
+    return NextResponse.json(
+      { message: `fetch bookings error: ${error}` },
+      { status: 500 }
+    )
   }
 }

@@ -2,15 +2,16 @@
 
 import { SessionProvider } from "next-auth/react";
 import axios from "axios";
+import { useEffect } from "react";
 
-// Configure axios globally
-axios.defaults.baseURL = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+// Configure axios globally — use relative URLs (current origin)
+axios.defaults.baseURL = "";
 axios.defaults.withCredentials = true;
 
-console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
-console.log("axios baseURL set to:", axios.defaults.baseURL);
-
 export default function Providers({ children }: { children: React.ReactNode }) {
-  console.log("Providers component rendering, axios baseURL:", axios.defaults.baseURL);
+  useEffect(() => {
+    console.log("axios baseURL:", axios.defaults.baseURL || "(relative — same origin)");
+  }, []);
+
   return <SessionProvider>{children}</SessionProvider>;
 }

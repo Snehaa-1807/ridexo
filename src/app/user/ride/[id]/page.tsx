@@ -133,36 +133,28 @@ function Page() {
   const [chatOpen, setChatOpen] = useState(false);
 const {id}=useParams()
 useEffect(() => {
-  async function fetch() {
-    setLoading(true);
+  async function fetchBooking(isInitial = false) {
+    if (isInitial) setLoading(true)
 
     try {
-      const { data } = await axios.post("/api/user/active-ride",{bookingId:id});
-
-      setBooking(data);
-      console.log(data);
-
-      setStatus(data.bookingStatus);
-
-      setPickUpPos([
-        data.pickUpLocation.coordinates[1],
-        data.pickUpLocation.coordinates[0],
-      ]);
-
-      setDropPos([
-        data.dropLocation.coordinates[1],
-        data.dropLocation.coordinates[0],
-      ]);
-
-      setLoading(false);
+      const { data } = await axios.post("/api/user/active-ride", { bookingId: id })
+      setBooking(data)
+      setStatus(data.bookingStatus)
+      setPickUpPos([data.pickUpLocation.coordinates[1], data.pickUpLocation.coordinates[0]])
+      setDropPos([data.dropLocation.coordinates[1], data.dropLocation.coordinates[0]])
     } catch (error: any) {
-      console.log(error.response.data.message);
-      setLoading(false);
+      console.log(error?.response?.data?.message)
+    } finally {
+      if (isInitial) setLoading(false)
     }
   }
 
-  fetch();
-}, []);
+  fetchBooking(true) // initial load — shows spinner once
+
+  // Poll every 3 seconds — no spinner flash
+  const interval = setInterval(() => fetchBooking(false), 3000)
+  return () => clearInterval(interval)
+}, [id])
 const onChatToggle=()=>{
   setChatOpen(prev => !prev)
 }
